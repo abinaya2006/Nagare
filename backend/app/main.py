@@ -1,0 +1,48 @@
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
+from app.api import auth, health, orda, schedules, tasks
+from app.core.config import get_settings
+from app.core.logging import configure_logging
+from app.middleware.audit import AuditLogMiddleware
+from app.middleware.security import RequestSizeLimitMiddleware, SecurityHeadersMiddleware
+
+configure_logging()
+settings = get_settings()
+limiter = Limiter(key_func=get_remote_address, default_limits=[f"{settings.rate_limit_per_minute}/minute"])
+
+app = FastAPI(title="Pulse Plan API", version="0.1.0")
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(RequestSizeLimitMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(AuditLogMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.frontend_origin],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-CSRF-Token"],
+)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(status_code=500, content={"detail": "Unexpected server error"})
+
+
+app.include_router(health.router)
+app.include_router(auth.router)
+app.include_router(tasks.router)
+app.include_router(schedules.router)
+app.include_router(orda.router)
+
