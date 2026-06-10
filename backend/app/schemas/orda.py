@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from app.schemas.schedules import ScheduleOutput, WorkPreferences
 
 
-class OrdaRequest(BaseModel):
+class ORDARequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
     preferences: WorkPreferences = WorkPreferences()
 
