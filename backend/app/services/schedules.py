@@ -9,6 +9,7 @@ from app.schemas.schedules import (
     ScheduleOutput,
     ScheduleRecord,
     ScheduleRescheduleRequest,
+    TimeBlock,
     WorkPreferences,
 )
 from app.schemas.tasks import TaskStatus
@@ -40,7 +41,7 @@ class ScheduleService:
         self.repo.replace_current(user_id, output, source="ai_gemini")
         return output
 
-    def generate_schedule_rule_based(tasks: list) -> list:
+    def generate_schedule_rule_based(self, tasks: list) -> list:
         priority_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
         energy_slots = {"High": "morning", "Medium": "afternoon", "Low": "evening"}
 
@@ -100,18 +101,29 @@ class ScheduleService:
         self, user_id: str, preferences: WorkPreferences
     ) -> WorkPreferences:
         stored = self.preferences.get_user_preferences(user_id)
-        if stored and stored.task_count:
-            preferences.max_daily_tasks = stored.task_count
+        if stored:
+            if stored.task_count:
+                preferences.max_daily_tasks = stored.task_count
+            if stored.lunch_start and stored.lunch_end:
+                preferences.lunch = TimeBlock(
+                    start=stored.lunch_start, end=stored.lunch_end
+                )
         return preferences
 
     def _rule_based_fallback(
         self, tasks, preferences: WorkPreferences
     ) -> ScheduleOutput:
-        from datetime import datetime, timedelta, timezone
-
         PRIORITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
-        WORKDAY_START = int((preferences.workday_start or "08:00").split(":")[0])
-        WORKDAY_END = int((preferences.workday_end or "21:00").split(":")[0])
+        WORKDAY_START = (
+            int((preferences.workday_start or "08:00").split(":")[0])
+            if isinstance(preferences.workday_start, str)
+            else preferences.workday_start.hour
+        )
+        WORKDAY_END = (
+            int((preferences.workday_end or "21:00").split(":")[0])
+            if isinstance(preferences.workday_end, str)
+            else preferences.workday_end.hour
+        )
         BUFFER = timedelta(minutes=10)
 
         pending = [t for t in tasks if t.status != TaskStatus.completed]
@@ -172,40 +184,47 @@ class ScheduleService:
     async def _generate_via_ai(
         self, user_id: str, preferences: WorkPreferences, event=None
     ) -> ScheduleOutput:
-        tasks = self.tasks.list_tasks(user_id)
-        routine_tasks = self.preferences.list_routine_tasks(user_id, active_only=True)
-
-        tasks_json = [
-            t.model_dump(mode="json") for t in tasks if t.status != TaskStatus.completed
-        ]
-
-        formatted_routines = [
-            {
-                "title": r.title,
-                "start_time": r.start_time.strftime("%H:%M"),
-                "end_time": r.end_time.strftime("%H:%M"),
-                "days": r.days,
-            }
-            for r in routine_tasks
-        ]
-
-        if event:
-            formatted_routines.append(
-                {
-                    "title": event.title,
-                    "start_time": event.start_time.strftime("%H:%M"),
-                    "end_time": event.end_time.strftime("%H:%M"),
-                    "days": ["daily"],
-                }
-            )
-
-        ai_payload = {
-            "tasks": tasks_json,
-            "routine_tasks": formatted_routines,
-            "preferences": preferences.model_dump(mode="json", by_alias=True),
-        }
+        # Fetch tasks once, outside the try, so it's available to both the
+        # AI path and the fallback path without re-fetching.
+        tasks = await self.tasks.list_tasks(user_id)
 
         try:
+            routine_tasks = await self.preferences.list_routine_tasks(
+                user_id, active_only=True
+            )
+
+            tasks_json = [
+                t.model_dump(mode="json")
+                for t in tasks
+                if t.status != TaskStatus.completed
+            ]
+
+            formatted_routines = [
+                {
+                    "title": r.title,
+                    "start_time": r.start_time.strftime("%H:%M"),
+                    "end_time": r.end_time.strftime("%H:%M"),
+                    "days": r.days,
+                }
+                for r in routine_tasks
+            ]
+
+            if event:
+                formatted_routines.append(
+                    {
+                        "title": event.title,
+                        "start_time": event.start_time.strftime("%H:%M"),
+                        "end_time": event.end_time.strftime("%H:%M"),
+                        "days": ["daily"],
+                    }
+                )
+
+            ai_payload = {
+                "tasks": tasks_json,
+                "routine_tasks": formatted_routines,
+                "preferences": preferences.model_dump(mode="json", by_alias=True),
+            }
+
             async with httpx.AsyncClient(timeout=90.0) as client:
                 ai_url = os.getenv("AI_SERVICE_URL", "http://127.0.0.1:8000")
                 response = await client.post(
@@ -221,6 +240,7 @@ class ScheduleService:
             )
 
         except Exception as e:
-            # ← fallback instead of crashing
+            # Catches: routine_tasks fetch errors, AI service down/timeout,
+            # bad AI response shape, etc. Falls back instead of crashing.
             print(f"[ScheduleService] AI failed ({e}), using rule-based fallback.")
             return self._rule_based_fallback(tasks, preferences)

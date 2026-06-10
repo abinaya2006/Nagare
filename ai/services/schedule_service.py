@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from ..models.schedule import ScheduleItem, ScheduleOutput
 from ..prompts.schedule_generation import SCHEDULE_GENERATION_SYSTEM_PROMPT
@@ -29,7 +30,7 @@ def _rule_based_schedule(request: ScheduleGenerateRequest) -> ScheduleOutput:
       3. Pack tasks sequentially with a 10-minute buffer between them.
       4. Split tasks that would exceed WORKDAY_END into the next day.
     """
-    now = datetime.now()
+    now = datetime.now(ZoneInfo("Asia/Kolkata"))
     tasks = request.tasks or []
     routine_tasks = request.routine_tasks or []
 
