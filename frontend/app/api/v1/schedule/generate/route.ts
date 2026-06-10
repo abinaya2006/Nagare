@@ -4,13 +4,16 @@ import { cookies } from "next/headers";
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const cookieStore = cookies();
+  const apiOrigin = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000")
+    .replace(/\/$/, "")
+    .replace(/\/api\/v1$/, "");
 
   // Forward the auth token from the request headers
   const authHeader = req.headers.get("authorization") ?? "";
 
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/schedule/generate`,
+      `${apiOrigin}/api/v1/schedule/generate`,
       {
         method: "POST",
         headers: {

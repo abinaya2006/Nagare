@@ -21,7 +21,7 @@ export function useNANIPlanner() {
       setProcessing(true);
       try {
         const { data } = await api.post(
-          "http://localhost:8000/orda/process",
+          "/orda/process",
           { message: text },
           {
             headers: {

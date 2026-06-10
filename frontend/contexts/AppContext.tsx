@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 import type { User, Task, AppPage } from "@/types";
+import { api } from "@/services/api";
 
 interface AppContextValue {
   page: AppPage;
@@ -99,23 +100,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const response = await fetch("http://localhost:8000/api/v1/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.detail || "Login failed");
-    }
+    const { data } = await api.post("/auth/login", { email, password });
 
     const newUser: User = {
       id: data.user_id,
@@ -136,23 +121,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const signup = useCallback(
     async (name: string, email: string, password: string) => {
-      const response = await fetch("http://localhost:8000/api/v1/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Signup failed");
-      }
+      const { data } = await api.post("/auth/signup", { email, password });
 
       const newUser: User = {
         id: data.user_id,

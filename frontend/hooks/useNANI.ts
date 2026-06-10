@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/services/api";
 import type { NaniMessage } from "@/types";
-import { apiBase } from "@/services/api";
 
 interface UseNaniResult {
   messages: NaniMessage[];
@@ -42,7 +41,7 @@ export function useNANI(): UseNaniResult {
     setError(null);
 
     try {
-      const { data } = await apiBase.post("/orda/process", { message: trimmed }, {
+      const { data } = await api.post("/orda/process", { message: trimmed }, {
         headers: { Authorization: api.defaults.headers.common.Authorization }
       });
       console.log('🤖 NANI response:', data);

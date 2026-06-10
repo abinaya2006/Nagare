@@ -1,7 +1,12 @@
 import axios from "axios";
 
+const apiOrigin = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000")
+  .replace(/\/$/, "")
+  .replace(/\/api\/v1$/, "");
+const apiVersion = `${apiOrigin}/api/v1`;
+
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1",
+  baseURL: apiVersion,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
@@ -25,7 +30,7 @@ export function setAuthToken(token?: string) {
 }
 
 export const apiBase = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: apiVersion,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
