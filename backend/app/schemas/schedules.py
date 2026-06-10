@@ -26,6 +26,12 @@ class ScheduleGenerateRequest(BaseModel):
     preferences: WorkPreferences = WorkPreferences()
 
 
+class ScheduleCreate(BaseModel):
+    schedule_date: date
+    items: list[ScheduleItem]
+    source: str
+
+
 class ScheduleRecord(BaseModel):
     id: UUID
     user_id: UUID
