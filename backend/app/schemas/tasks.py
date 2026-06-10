@@ -1,17 +1,17 @@
 from datetime import datetime
-from enum import StrEnum
+from enum import Enum
 from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 from app.core.security import sanitize_text
 
 
-class Priority(StrEnum):
-    low = "Low"
-    medium = "Medium"
-    high = "High"
+class Priority(str, Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
 
 
-class TaskStatus(StrEnum):
+class TaskStatus(str, Enum):
     pending = "Pending"
     scheduled = "Scheduled"
     completed = "Completed"
