@@ -8,3 +8,7 @@ supabase: Client = create_client(
     settings.supabase_url,
     settings.supabase_anon_key
 )
+
+
+def get_supabase() -> Client:
+    return supabase
