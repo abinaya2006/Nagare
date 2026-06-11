@@ -7,7 +7,7 @@ from app.schemas.auth import AuthRequest, SignupResponse, LoginResponse, User
 from fastapi import Depends
 from app.dependencies.auth import get_current_user
 
-security = HTTPBearer()
+security = HTTPBearer(scheme_name="Bearer", auto_error=False)
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
@@ -59,7 +59,10 @@ def login(payload: AuthRequest, response: Response) -> LoginResponse:
 
 
 @router.get("/me", response_model=User)
-def get_current_user_profile(current_user: AuthUser = Depends(get_current_user)) -> User:
+def get_current_user_profile(
+    _credentials=Security(security),
+    current_user: AuthUser = Depends(get_current_user),
+) -> User:
     return User(
         id=current_user.id,
         name="",
