@@ -3,7 +3,7 @@ from app.dependencies.auth import CurrentUser
 from app.schemas.tasks import Task, TaskCreate, TaskUpdate
 from app.services.tasks import TaskService
 
-router = APIRouter(prefix="/tasks", tags=["tasks"])
+router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
 
 
 @router.get("", response_model=list[Task])
