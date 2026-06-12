@@ -1,4 +1,4 @@
-from app.schemas.orda import OrdaRequest, OrdaResponse
+from app.schemas.orda import ORDARequest, OrdaResponse
 from app.schemas.schedules import ScheduleGenerateRequest
 from app.schemas.tasks import TaskUpdate
 from app.services.schedules import ScheduleService
@@ -6,7 +6,7 @@ from app.services.tasks import TaskService
 
 
 class OrdaService:
-    async def process(self, user_id: str, payload: OrdaRequest) -> OrdaResponse:
+    async def process(self, user_id: str, payload: ORDARequest) -> OrdaResponse:
         message = payload.message.lower()
         tasks = TaskService().list_tasks(user_id)
 
