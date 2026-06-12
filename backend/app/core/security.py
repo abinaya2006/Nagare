@@ -27,7 +27,18 @@ def verify_supabase_jwt(token: str) -> AuthUser:
             options={"verify_aud": False},
         )
     except JWTError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
+        try:
+            from app.dependencies.supabase import get_supabase
+
+            response = get_supabase().auth.get_user(token)
+            user = response.user if response else None
+            if not user:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            return AuthUser(id=user.id, email=user.email)
+        except HTTPException:
+            raise
+        except Exception as supabase_exc:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from supabase_exc
 
     exp = payload.get("exp")
     if exp and datetime.fromtimestamp(exp, timezone.utc) < datetime.now(timezone.utc):

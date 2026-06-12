@@ -17,7 +17,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         length = request.headers.get("content-length")
-        if length and int(length) > get_settings().request_max_bytes:
-            return JSONResponse({"detail": "Request too large"}, status_code=413)
+        if length:
+            try:
+                if int(length) > get_settings().request_max_bytes:
+                    return JSONResponse({"detail": "Request too large"}, status_code=413)
+            except ValueError:
+                return JSONResponse({"detail": "Invalid request"}, status_code=400)
         return await call_next(request)
 

@@ -3,7 +3,7 @@ from app.dependencies.auth import CurrentUser
 from app.schemas.schedules import ScheduleGenerateRequest, ScheduleOutput
 from app.services.schedules import ScheduleService
 
-router = APIRouter(prefix="/schedule", tags=["schedule"])
+router = APIRouter(prefix="/api/v1/schedule", tags=["schedule"])
 
 
 @router.post("/generate", response_model=ScheduleOutput)
