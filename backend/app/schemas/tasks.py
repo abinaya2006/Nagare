@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, time
 from enum import Enum
 from uuid import UUID
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from app.core.security import sanitize_text
 
 
@@ -12,9 +12,20 @@ class Priority(str, Enum):
 
 
 class TaskStatus(str, Enum):
-    pending = "Pending"
-    scheduled = "Scheduled"
-    completed = "Completed"
+    pending = "pending"
+    scheduled = "scheduled"
+    completed = "completed"
+
+
+class TaskSort(str, Enum):
+    deadline = "deadline"
+    priority = "priority"
+
+
+def normalize_enum_value(value: str | Enum | None) -> str | Enum | None:
+    if isinstance(value, str):
+        return value.strip().lower()
+    return value
 
 
 class TaskBase(BaseModel):
@@ -24,11 +35,35 @@ class TaskBase(BaseModel):
     estimated_duration_minutes: int = Field(ge=5, le=1440)
     priority: Priority = Priority.medium
     status: TaskStatus = TaskStatus.pending
+    is_routine: bool = False
+    recurrence_rule: str | None = Field(default=None, max_length=500)
+    fixed_start_time: time | None = None
+    fixed_end_time: time | None = None
 
     @field_validator("title", "description")
     @classmethod
     def clean_text(cls, value: str) -> str:
         return sanitize_text(value, 2000)
+
+    @field_validator("recurrence_rule")
+    @classmethod
+    def clean_recurrence_rule(cls, value: str | None) -> str | None:
+        return sanitize_text(value, 500) if value is not None else value
+
+    @field_validator("priority", "status", mode="before")
+    @classmethod
+    def normalize_choice(cls, value: str | Enum | None) -> str | Enum | None:
+        return normalize_enum_value(value)
+
+    @model_validator(mode="after")
+    def validate_fixed_time_block(self):
+        if (self.fixed_start_time is None) != (self.fixed_end_time is None):
+            raise ValueError("fixed_start_time and fixed_end_time must be provided together")
+        if self.fixed_start_time and self.fixed_end_time and self.fixed_end_time <= self.fixed_start_time:
+            raise ValueError("fixed_end_time must be after fixed_start_time")
+        if self.recurrence_rule and not self.is_routine:
+            raise ValueError("recurrence_rule requires is_routine to be true")
+        return self
 
 
 class TaskCreate(TaskBase):
@@ -42,11 +77,25 @@ class TaskUpdate(BaseModel):
     estimated_duration_minutes: int | None = Field(default=None, ge=5, le=1440)
     priority: Priority | None = None
     status: TaskStatus | None = None
+    is_routine: bool | None = None
+    recurrence_rule: str | None = Field(default=None, max_length=500)
+    fixed_start_time: time | None = None
+    fixed_end_time: time | None = None
 
     @field_validator("title", "description")
     @classmethod
     def clean_optional_text(cls, value: str | None) -> str | None:
         return sanitize_text(value, 2000) if value is not None else value
+
+    @field_validator("recurrence_rule")
+    @classmethod
+    def clean_optional_recurrence_rule(cls, value: str | None) -> str | None:
+        return sanitize_text(value, 500) if value is not None else value
+
+    @field_validator("priority", "status", mode="before")
+    @classmethod
+    def normalize_optional_choice(cls, value: str | Enum | None) -> str | Enum | None:
+        return normalize_enum_value(value)
 
 
 class Task(TaskBase):
@@ -54,4 +103,21 @@ class Task(TaskBase):
     user_id: UUID
     created_at: datetime
     updated_at: datetime
+
+
+class TaskListResponse(BaseModel):
+    tasks: list[Task]
+
+
+class TaskResponse(BaseModel):
+    task: Task
+
+
+class TaskMutationResponse(BaseModel):
+    message: str
+    task: Task | None = None
+
+
+class TaskMessageResponse(BaseModel):
+    message: str
 

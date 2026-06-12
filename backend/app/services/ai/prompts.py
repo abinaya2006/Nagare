@@ -1,12 +1,12 @@
 from app.schemas.schedules import WorkPreferences
-from app.schemas.tasks import Task
+from app.schemas.tasks import Task, TaskStatus
 
 
 def schedule_prompt(tasks: list[Task], preferences: WorkPreferences) -> str:
     task_lines = [
         f"- id={task.id}; title={task.title}; deadline={task.deadline}; duration={task.estimated_duration_minutes}; priority={task.priority}; status={task.status}"
         for task in tasks
-        if task.status != "Completed"
+        if task.status != TaskStatus.completed
     ]
     return (
         "You are Pulse Plan, an intelligent scheduling assistant. "
