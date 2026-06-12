@@ -27,8 +27,8 @@ def signup(payload: AuthRequest, response: Response) -> SignupResponse:
             )
         
         return SignupResponse()
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unable to create account") from exc
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -36,6 +36,8 @@ def login(payload: AuthRequest, response: Response) -> LoginResponse:
     try:
         auth = get_supabase().auth.sign_in_with_password({"email": payload.email, "password": payload.password})
         session = auth.session
+        if not session or not auth.user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
         
         response.set_cookie(
             "pulse_access_token",
@@ -54,8 +56,10 @@ def login(payload: AuthRequest, response: Response) -> LoginResponse:
                 email=auth.user.email or ""
             )
         )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password") from exc
 
 
 @router.get("/me", response_model=User)
@@ -71,6 +75,6 @@ def get_current_user_profile(
 
 
 @router.post("/logout")
-def logout(response: Response) -> dict[str, str]:
+def logout(response: Response, current_user: AuthUser = Depends(get_current_user)) -> dict[str, str]:
     response.delete_cookie("pulse_access_token")
     return {"message": "Logged out successfully"}
