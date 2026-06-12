@@ -1,36 +1,31 @@
-export type Priority = "Low" | "Medium" | "High";
-export type TaskStatus = "Pending" | "Scheduled" | "Completed";
+export type TaskCategory = 'focus' | 'admin' | 'creative' | 'health' | 'social';
 
 export interface Task {
   id: string;
-  user_id: string;
   title: string;
-  description: string;
-  deadline: string | null;
-  estimated_duration_minutes: number;
-  priority: Priority;
-  status: TaskStatus;
-  created_at: string;
-  updated_at: string;
+  category: TaskCategory;
+  done: boolean;
+  dueToday: boolean;
 }
 
-export interface TaskInput {
-  title: string;
-  description?: string;
-  deadline?: string | null;
-  estimated_duration_minutes: number;
-  priority: Priority;
-  status?: TaskStatus;
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  profileComplete: boolean;
+  workHoursStart?: string;
+  workHoursEnd?: string;
 }
 
-export interface ScheduleItem {
-  task_id: string;
-  task_title: string;
-  start_time: string;
-  end_time: string;
+export interface OrbConfig {
+  id: number;
+  color: string;
+  size: number;
+  initialX: number;
+  initialY: number;
+  duration: number;
+  xRange: number;
+  yRange: number;
 }
 
-export interface ScheduleOutput {
-  schedule: ScheduleItem[];
-}
-
+export type AppPage = 'login' | 'signup' | 'dashboard';
