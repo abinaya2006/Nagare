@@ -1,32 +1,34 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import "@/styles/globals.css";
-import { AppNav } from "@/components/AppNav";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ScheduleProvider } from "@/contexts/ScheduleContext";
-import { TaskProvider } from "@/contexts/TaskContext";
 
 export const metadata: Metadata = {
-  title: "Pulse Plan",
-  description: "Less Planning. More Doing.",
-  manifest: "/manifest.json"
+  title: "Nagare",
+  description: "A calm productivity app that drifts with you.",
 };
 
-export const viewport: Viewport = { themeColor: "#111827" };
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>
-        <AuthProvider>
-          <TaskProvider>
-            <ScheduleProvider>
-              <AppNav />
-              {children}
-            </ScheduleProvider>
-          </TaskProvider>
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
 }
-
