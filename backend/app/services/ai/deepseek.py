@@ -3,7 +3,7 @@ import httpx
 import structlog
 from app.core.config import get_settings
 from app.schemas.schedules import ScheduleOutput, WorkPreferences
-from app.schemas.tasks import Task
+from app.schemas.tasks import Priority, Task, TaskStatus
 from app.services.ai.base import AIProvider
 from app.services.ai.prompts import schedule_prompt
 
@@ -43,9 +43,9 @@ class DeepSeekProvider(AIProvider):
 
         cursor = datetime.now().replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
         items = []
-        ordered = sorted(tasks, key=lambda task: (task.priority != "High", task.deadline.isoformat() if task.deadline else "9999"))
+        ordered = sorted(tasks, key=lambda task: (task.priority != Priority.high, task.deadline.isoformat() if task.deadline else "9999"))
         for task in ordered:
-            if task.status == "Completed":
+            if task.status == TaskStatus.completed:
                 continue
             end = cursor + timedelta(minutes=task.estimated_duration_minutes)
             items.append({"task_id": str(task.id), "task_title": task.title, "start_time": cursor, "end_time": end})
