@@ -54,6 +54,7 @@ class UnscheduledTask(BaseModel):
 class ScheduleOutput(BaseModel):
     schedule: list[ScheduleItem]
     unscheduled_tasks: list[UnscheduledTask] = Field(default_factory=list)
+    justification: str | None = None  
 
 
 class ScheduleGenerateRequest(BaseModel):
