@@ -10,3 +10,7 @@ class ScheduleItem(BaseModel):
 
 class ScheduleOutput(BaseModel):
     schedule: List[ScheduleItem] = Field(..., description="Chronological list of scheduled tasks")
+    justification: str = Field(
+        ..., 
+        description="A friendly, 1-2 sentence explanation of how the AI balanced the workload, priorities, and breaks."
+    )
