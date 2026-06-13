@@ -123,7 +123,9 @@ export function ThoughtDrawer({
                 >
                   {task.state === "overdue"
                     ? "Calling"
-                    : task.state.charAt(0).toUpperCase() + task.state.slice(1)}
+                    : task.state
+                      ? task.state.charAt(0).toUpperCase() + task.state.slice(1)
+                      : "Unknown"}
                 </span>
               </Field>
 

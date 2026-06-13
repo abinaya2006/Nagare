@@ -9,29 +9,18 @@ import ProfileCrystal from "./ProfileCrystal";
 import CircadianRiver from "./CircadianRiver";
 import FlowStyleConstellation from "./FlowStyleConstellation";
 import FocusEnergyRing from "./FocusEnergyRing";
-import DistractionStorm from "./DistractionStorm";
-import LifeCurrent from "./LifeCurrent";
-import DeadlinePath from "./DeadlinePath";
-import PlanningPersonality from "./PlanningPersonality";
-import EnergyDrainers from "./EnergyDrainers";
-import EnergySources from "./EnergySources";
 import RestRhythm from "./RestRhythm";
 import ProtectedMoments from "./ProtectedMoments";
 import DreamRecovery from "./DreamRecovery";
 import NANIInsights from "./NANIInsights";
 import PersonalizeButton from "./PersonalizeButton";
-import FutureFeatures from "./FutureFeatures";
 import ReturnToStillness from "./ReturnToStillness";
 
-/**
- * Mind Sanctuary: a place where Nagare learns who you are. Every section
- * here is a small, playful reflection rather than a setting to configure.
- */
 export default function MindSanctuary() {
   const {
     preferences,
+    loading,
     setPreference,
-    toggleInArray,
     addProtectedBlock,
     removeProtectedBlock,
   } = usePreferences();
@@ -40,12 +29,18 @@ export default function MindSanctuary() {
   const { insights, saveError, save, logout, isLoggedOut } = useSettings(preferences, profile);
   const moonPhase = SLEEP_HOURS_INFO[preferences.sleepHours].moonPhase;
 
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center">
+      <p className="text-ink-soft text-sm">Loading your preferences...</p>
+    </div>
+  );
+
   return (
     <div className="relative pb-32">
       <AmbientBackground circadianPeriod={preferences.circadianPeriod} moonPhase={moonPhase} />
 
       <header className="mb-6">
-        <h1 className="font-display text-2xl font-medium italic text-ink sm:text-3xl">Mind Sanctuary</h1>
+        <h1 className="font-display text-2xl font-medium italic text-ink sm:text-3xl">Settings</h1>
         <p className="mt-1 text-sm text-ink-soft">A place where your flow learns who you are.</p>
       </header>
 
@@ -67,30 +62,6 @@ export default function MindSanctuary() {
             value={preferences.focusDuration}
             onChange={(duration) => setPreference("focusDuration", duration)}
           />
-          <DistractionStorm
-            value={preferences.distractions}
-            onToggle={(d) => toggleInArray("distractions", d)}
-          />
-          <LifeCurrent
-            value={preferences.lifeCurrent}
-            onChange={(level) => setPreference("lifeCurrent", level)}
-          />
-          <DeadlinePath
-            value={preferences.deadlineRelationship}
-            onChange={(rel) => setPreference("deadlineRelationship", rel)}
-          />
-          <PlanningPersonality
-            value={preferences.planningPersonality}
-            onChange={(p) => setPreference("planningPersonality", p)}
-          />
-          <EnergyDrainers
-            value={preferences.energyDrainers}
-            onToggle={(d) => toggleInArray("energyDrainers", d)}
-          />
-          <EnergySources
-            value={preferences.energySources}
-            onToggle={(s) => toggleInArray("energySources", s)}
-          />
           <RestRhythm
             value={preferences.breakPreference}
             onChange={(pref) => setPreference("breakPreference", pref)}
@@ -104,8 +75,6 @@ export default function MindSanctuary() {
             value={preferences.sleepHours}
             onChange={(hours) => setPreference("sleepHours", hours)}
           />
-
-          <FutureFeatures />
           <ReturnToStillness onLogout={logout} isLoggedOut={isLoggedOut} />
         </div>
 
