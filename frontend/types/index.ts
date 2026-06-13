@@ -1,11 +1,35 @@
-export type TaskCategory = 'focus' | 'admin' | 'creative' | 'health' | 'social';
+export type TaskCategory = "focus" | "admin" | "creative" | "health" | "social";
+export type Priority = "high" | "medium" | "low";
 
 export interface Task {
   id: string;
   title: string;
   category: TaskCategory;
+  priority: Priority;
+  deadline: string; // ISO date string
+  estimatedDuration: number; // minutes
   done: boolean;
+  completed: boolean;
   dueToday: boolean;
+}
+
+export interface ScheduleBlock {
+  id: string;
+  time: string;
+  label: string;
+}
+
+export interface NaniMessage {
+  id: string;
+  role: "user" | "nani";
+  content: string;
+  timestamp: string;
+}
+
+export interface MindSnapshotData {
+  total: number;
+  pending: number;
+  completed: number;
 }
 
 export interface User {
@@ -13,8 +37,7 @@ export interface User {
   name: string;
   email: string;
   profileComplete: boolean;
-  workHoursStart?: string;
-  workHoursEnd?: string;
+  onboardingComplete: boolean;
 }
 
 export interface OrbConfig {
@@ -28,4 +51,4 @@ export interface OrbConfig {
   yRange: number;
 }
 
-export type AppPage = 'login' | 'signup' | 'dashboard';
+export type AppPage = "login" | "signup" | "onboarding" | "dashboard";

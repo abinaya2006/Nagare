@@ -1,104 +1,154 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useApp } from "@/contexts/AppContext";
-import ProfileBanner from "@/components/ProfileBanner";
-import JarPreview from "@/components/JarPreview";
-import StatCard from "@/components/StatCard";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus } from "lucide-react";
 
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+import AmbientBackground from "@/components/dashboard/AmbientBackground";
+import FloatingParticles from "@/components/dashboard/FloatingParticles";
+import MemoryJar from "@/components/dashboard/MemoryJar";
+import TodaysFlow from "@/components/dashboard/TodaysFlow";
+import MindSnapshot from "@/components/dashboard/MindSnapshot";
+import SchedulePreview from "@/components/dashboard/SchedulePreview";
+import NANIOrb from "@/components/dashboard/NANIOrb";
+import { useNaniSidebar } from "@/components/providers/NaniProvider";
+
+import { mockTasks, mockSchedule, mockSnapshot } from "@/lib/mock-data";
+import type { Task } from "@/types";
+
+const USER_NAME = "Abi";
+
+function isSameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 export default function DashboardPage() {
-  const { user, tasks } = useApp();
+  const router = useRouter();
+  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [isExpanding, setIsExpanding] = useState(false);
+  const [greeting, setGreeting] = useState("Hello");
+  const {
+    isOpen: isNaniOpen,
+    open: openNani,
+    close: closeNani,
+  } = useNaniSidebar();
 
-  const todayTasks = tasks.filter((t) => t.dueToday);
-  const doneToday = todayTasks.filter((t) => t.done).length;
-  const pendingCount = todayTasks.filter((t) => !t.done).length;
-  const firstName = user?.name?.split(" ")[0] ?? "there";
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good Morning");
+    else if (hour < 18) setGreeting("Good Afternoon");
+    else setGreeting("Good Evening");
+  }, []);
+
+  const handleComplete = (taskId: string) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t)),
+    );
+  };
+
+  const now = new Date();
+  const pendingTasks = tasks.filter((t) => !t.completed);
+  const todaysTasks = pendingTasks.filter((t) =>
+    isSameDay(new Date(t.deadline), now),
+  );
+  const upcomingDeadlines = pendingTasks
+    .filter((t) => !isSameDay(new Date(t.deadline), now))
+    .sort(
+      (a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime(),
+    );
+
+  const snapshot = {
+    total: mockSnapshot.total,
+    pending: pendingTasks.length,
+    completed:
+      tasks.length -
+      pendingTasks.length +
+      (mockSnapshot.completed - mockTasks.filter((t) => t.completed).length),
+  };
+
+  const handleScheduleClick = () => {
+    setIsExpanding(true);
+    setTimeout(() => {
+      router.push("/schedule/create");
+    }, 650);
+  };
 
   return (
-    <motion.div
-      key="dashboard"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.42, ease: "easeOut" }}
-      style={{
-        position: "relative",
-        zIndex: 10,
-        width: "100%",
-        maxWidth: 520,
-        margin: "0 auto",
-        padding: "32px 16px 48px",
-      }}
-    >
-      {/* Profile banner — shown if incomplete */}
-      {user && !user.profileComplete && (
-        <ProfileBanner onSetup={() => alert("Profile setup coming soon!")} />
-      )}
+    <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-8 sm:px-8 sm:pt-10">
+      <AmbientBackground />
+      <FloatingParticles count={22} />
 
-      {/* Greeting */}
-      <motion.div
-        initial={{ opacity: 0, y: -6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        style={{ marginBottom: 24 }}
-      >
-        <h1
-          style={{
-            fontFamily: "'DM Serif Display', Georgia, serif",
-            fontSize: "clamp(1.5rem, 4vw, 1.875rem)",
-            fontWeight: 400,
-            color: "#1C1A2E",
-            letterSpacing: "-0.025em",
-            marginBottom: 6,
-          }}
-        >
-          {getGreeting()}, {firstName}.
-        </h1>
-        <p style={{ fontSize: "0.875rem", color: "#6B6880" }}>
-          {pendingCount > 0
-            ? `${pendingCount} task${pendingCount > 1 ? "s" : ""} still floating today.`
-            : "Everything's done for today — well held."}
-        </p>
-      </motion.div>
+      {/* Header */}
+      <header className="relative z-10 mx-auto flex max-w-6xl items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-medium italic text-ink sm:text-4xl">
+            {greeting}, {USER_NAME}.
+          </h1>
+          <p className="mt-1 text-sm text-ink-soft">
+            Your thoughts are gathering.
+          </p>
+        </div>
 
-      {/* Jar preview */}
-      <JarPreview tasks={tasks} />
+        <div className="flex flex-col items-center gap-1.5">
+          <motion.button
+            type="button"
+            onClick={handleScheduleClick}
+            aria-label="Schedule a new thought"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-lavender via-cloud to-sky shadow-glow-lav"
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Plus size={22} className="text-ink" />
+          </motion.button>
+          <span className="text-xs text-ink-soft">Schedule</span>
+        </div>
+      </header>
 
-      {/* Quick stats */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <StatCard
-          label="Focus zone"
-          value="2 h 14 m"
-          sub="tracked today"
-          dotColor="#AFA9EC"
-          delay={0}
-        />
-        <StatCard
-          label="Done today"
-          value={`${doneToday} / ${todayTasks.length}`}
-          sub={
-            doneToday === todayTasks.length
-              ? "all clear ✦"
-              : `${pendingCount} remaining`
-          }
-          dotColor="#5DCAA5"
-          delay={0.07}
-        />
-        <StatCard
-          label="Mood"
-          value="Steady"
-          sub="last logged 2 h ago"
-          dotColor="#ED93B1"
-          delay={0.14}
-        />
-      </div>
-    </motion.div>
+      {/* Main layout */}
+      <section className="relative z-10 mx-auto mt-10 grid max-w-6xl gap-6 lg:grid-cols-[300px_1fr_300px] lg:items-center">
+        <div className="order-2 lg:order-1">
+          <TodaysFlow
+            todaysTasks={todaysTasks}
+            upcomingDeadlines={upcomingDeadlines}
+          />
+        </div>
+
+        <div className="order-1 lg:order-2">
+          <MemoryJar tasks={tasks} onCompleteTask={handleComplete} />
+        </div>
+
+        <div className="order-3 lg:order-3">
+          <MindSnapshot data={snapshot} />
+        </div>
+      </section>
+
+      {/* Schedule preview ribbon */}
+      <section className="relative z-10 mx-auto mt-12 max-w-6xl">
+        <SchedulePreview initialFlow={mockSchedule} />
+      </section>
+
+      {/* NANI */}
+      <NANIOrb onClick={openNani} isOpen={isNaniOpen} />
+
+      {/* Orb-expand page transition overlay */}
+      <AnimatePresence>
+        {isExpanding && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0.9, borderRadius: "50%" }}
+            animate={{ scale: 40, opacity: 1, borderRadius: "0%" }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed right-8 top-8 z-[100] h-14 w-14 origin-center bg-gradient-to-br from-lavender via-cloud to-sky"
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+    </main>
   );
 }
