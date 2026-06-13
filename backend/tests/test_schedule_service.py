@@ -5,6 +5,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.schemas.schedules import TimeBlock, WorkPreferences
+from app.schemas.preferences import RoutineTask
 from app.schemas.tasks import Priority, Task, TaskStatus
 from app.services.schedules import ScheduleService, SCHEDULE_HORIZON_DAYS
 
@@ -92,3 +93,26 @@ def test_invalid_timezone_returns_400() -> None:
 
     assert exc.value.status_code == 400
     assert exc.value.detail == "Invalid timezone"
+
+
+def test_scheduler_reserves_routine_task_blocks() -> None:
+    routine = RoutineTask(
+        id=uuid4(),
+        user_id=uuid4(),
+        title="Class",
+        start_time="00:00",
+        end_time="23:59",
+        days="daily",
+        is_active=True,
+        created_at=datetime.now(timezone.utc),
+    )
+
+    output = ScheduleService()._build_schedule(
+        [make_task("Flexible task")],
+        WorkPreferences(allow_weekends=True, workday_start="00:00", workday_end="23:59", lunch=None),
+        None,
+        routine_blocks=[routine],
+    )
+
+    assert output.schedule == []
+    assert output.unscheduled_tasks
