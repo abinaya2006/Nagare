@@ -9,13 +9,15 @@ const withPWA = withPWAInit({
     {
       urlPattern: /^https?.*/i,
       handler: "NetworkFirst",
-      options: { cacheName: "pulse-http-cache", expiration: { maxEntries: 80, maxAgeSeconds: 86400 } }
-    }
-  ]
+      options: {
+        cacheName: "pulse-http-cache",
+        expiration: { maxEntries: 80, maxAgeSeconds: 86400 },
+      },
+    },
+  ],
 });
 
 export default withPWA({
   reactStrictMode: true,
-  poweredByHeader: false
+  poweredByHeader: false,
 });
-
