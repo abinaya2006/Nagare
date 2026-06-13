@@ -145,8 +145,8 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
             exit={{ opacity: 0 }}
             className="pointer-events-none absolute inset-0 flex items-center justify-center"
           >
-            <p className="font-display text-sm italic text-lavglow drop-shadow">
-              ✨ all clear
+            <p className="font-display text-sm italic text-lavglow text-black drop-shadow">
+              all clear
             </p>
           </motion.div>
         )}

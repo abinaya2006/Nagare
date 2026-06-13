@@ -18,13 +18,10 @@ interface ProtectedMomentsProps {
 const CATEGORIES = Object.keys(PROTECTED_CATEGORY_INFO) as ProtectedCategory[];
 const HOURS = Array.from({ length: 25 }, (_, i) => i);
 
-/**
- * Question 11 - protected, unavailable time. A 24-hour timeline the user
- * drags across to carve out glowing regions NANI will never schedule into.
- */
 export default function ProtectedMoments({ blocks, onAdd, onRemove }: ProtectedMomentsProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [category, setCategory] = useState<ProtectedCategory>("custom");
+  const [customName, setCustomName] = useState("");
   const [draft, setDraft] = useState<{ start: number; end: number } | null>(null);
   const dragStartHour = useRef<number | null>(null);
 
@@ -33,7 +30,7 @@ export default function ProtectedMoments({ blocks, onAdd, onRemove }: ProtectedM
     if (!track) return 0;
     const rect = track.getBoundingClientRect();
     const ratio = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
-    return Math.round(ratio * 24 * 4) / 4; // snap to 15-minute increments
+    return Math.round(ratio * 24 * 4) / 4;
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -52,10 +49,14 @@ export default function ProtectedMoments({ blocks, onAdd, onRemove }: ProtectedM
 
   const handlePointerUp = () => {
     if (draft && draft.end - draft.start >= 0.25) {
+      const label =
+        category === "custom"
+          ? customName.trim() || "Custom"
+          : PROTECTED_CATEGORY_INFO[category].label;
       onAdd({
         id: `block-${Date.now()}`,
         category,
-        label: PROTECTED_CATEGORY_INFO[category].label,
+        label,
         startHour: draft.start,
         endHour: draft.end,
       });
@@ -65,11 +66,9 @@ export default function ProtectedMoments({ blocks, onAdd, onRemove }: ProtectedM
   };
 
   const renderSegments = (block: ProtectedBlock) => {
-    const color = PROTECTED_CATEGORY_INFO[block.category].color;
     if (block.endHour >= block.startHour) {
       return [{ left: block.startHour, width: block.endHour - block.startHour }];
     }
-    // wraps past midnight (e.g. sleep 23 -> 7)
     return [
       { left: block.startHour, width: 24 - block.startHour },
       { left: 0, width: block.endHour },
@@ -104,6 +103,23 @@ export default function ProtectedMoments({ blocks, onAdd, onRemove }: ProtectedM
         ))}
       </div>
 
+      {/* Custom name input */}
+      {category === "custom" && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-3"
+        >
+          <input
+            type="text"
+            placeholder="Name this block (e.g. Gym, Prayer, Commute)"
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            className="w-full rounded-xl border border-white/40 bg-white/40 px-4 py-2 text-sm text-ink placeholder:text-ink-soft focus:outline-none focus:ring-2 focus:ring-lavender/40 backdrop-blur-sm"
+          />
+        </motion.div>
+      )}
+
       <div
         ref={trackRef}
         onPointerDown={handlePointerDown}
@@ -114,7 +130,6 @@ export default function ProtectedMoments({ blocks, onAdd, onRemove }: ProtectedM
         }}
         className="relative h-16 w-full cursor-crosshair touch-none rounded-2xl bg-white/30 select-none"
       >
-        {/* hour ticks */}
         {HOURS.map((h) => (
           <span
             key={h}
@@ -124,7 +139,6 @@ export default function ProtectedMoments({ blocks, onAdd, onRemove }: ProtectedM
           />
         ))}
 
-        {/* existing blocks */}
         {blocks.map((block) =>
           renderSegments(block).map((seg, i) => (
             <div
@@ -153,7 +167,6 @@ export default function ProtectedMoments({ blocks, onAdd, onRemove }: ProtectedM
           ))
         )}
 
-        {/* draft block while dragging */}
         {draft && (
           <motion.div
             className="absolute top-1 bottom-1 rounded-lg"

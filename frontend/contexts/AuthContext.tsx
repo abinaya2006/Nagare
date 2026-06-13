@@ -47,7 +47,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           refresh_token: data.refresh_token,
         });
         setAuthToken(data.access_token);
-        router.push("/onboarding");
+
+        try {
+          const { data: prefsData } = await api.get("/preferences/me");
+          console.log('🔍 Preferences response:', prefsData);
+          const hasPreferences = !!prefsData?.preferences;
+          console.log('✅ Has preferences:', hasPreferences);
+          router.push(hasPreferences ? '/dashboard' : '/onboarding');
+        } catch (err) {
+          console.log('❌ Preferences error:', err);
+          router.push('/onboarding');
+        }
       },
 
       async signup(email, password) {

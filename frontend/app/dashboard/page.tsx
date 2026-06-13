@@ -12,10 +12,11 @@ import TodaysFlow from "@/components/dashboard/TodaysFlow";
 import MindSnapshot from "@/components/dashboard/MindSnapshot";
 import SchedulePreview from "@/components/dashboard/SchedulePreview";
 import NANIOrb from "@/components/dashboard/NANIOrb";
+import FocusBeacon from "@/components/dashboard/Pomodoro";
 import { useNaniSidebar } from "@/components/providers/NaniProvider";
+import { useTasks } from "@/contexts/TaskContext";
 
-import { mockTasks, mockSchedule, mockSnapshot } from "@/lib/mock-data";
-import type { Task } from "@/types";
+import { mockSchedule } from "@/lib/mock-data";
 
 const USER_NAME = "Abi";
 
@@ -29,14 +30,10 @@ function isSameDay(a: Date, b: Date) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const { tasks, loading } = useTasks();
   const [isExpanding, setIsExpanding] = useState(false);
   const [greeting, setGreeting] = useState("Hello");
-  const {
-    isOpen: isNaniOpen,
-    open: openNani,
-    close: closeNani,
-  } = useNaniSidebar();
+  const { isOpen: isNaniOpen, open: openNani } = useNaniSidebar();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -45,37 +42,33 @@ export default function DashboardPage() {
     else setGreeting("Good Evening");
   }, []);
 
-  const handleComplete = (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, completed: true } : t)),
-    );
-  };
+  useEffect(() => {
+    const raw = localStorage.getItem("nagare_onboarding");
+    if (raw) {
+      const data = JSON.parse(raw);
+      console.log("🌊 Onboarding Answers:", data.answers);
+      console.log("📅 Completed At:", data.completedAt);
+    }
+  }, []);
 
   const now = new Date();
-  const pendingTasks = tasks.filter((t) => !t.completed);
+  const pendingTasks = tasks.filter((t) => t.state !== "resolved");
   const todaysTasks = pendingTasks.filter((t) =>
-    isSameDay(new Date(t.deadline), now),
+    t.deadline ? isSameDay(new Date(t.deadline), now) : false
   );
   const upcomingDeadlines = pendingTasks
-    .filter((t) => !isSameDay(new Date(t.deadline), now))
-    .sort(
-      (a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime(),
-    );
+    .filter((t) => t.deadline && !isSameDay(new Date(t.deadline), now))
+    .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime());
 
   const snapshot = {
-    total: mockSnapshot.total,
+    total: tasks.length,
     pending: pendingTasks.length,
-    completed:
-      tasks.length -
-      pendingTasks.length +
-      (mockSnapshot.completed - mockTasks.filter((t) => t.completed).length),
+    completed: tasks.filter((t) => t.state === "resolved").length,
   };
 
   const handleScheduleClick = () => {
     setIsExpanding(true);
-    setTimeout(() => {
-      router.push("/schedule/create");
-    }, 650);
+    setTimeout(() => router.push("/schedule/create"), 650);
   };
 
   return (
@@ -83,61 +76,56 @@ export default function DashboardPage() {
       <AmbientBackground />
       <FloatingParticles count={22} />
 
-      {/* Header */}
       <header className="relative z-10 mx-auto flex max-w-6xl items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-medium italic text-ink sm:text-4xl">
             {greeting}, {USER_NAME}.
           </h1>
           <p className="mt-1 text-sm text-ink-soft">
-            Your thoughts are gathering.
+            {loading ? "Gathering your thoughts…" : "Your thoughts are gathering."}
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-1.5">
-          <motion.button
-            type="button"
-            onClick={handleScheduleClick}
-            aria-label="Schedule a new thought"
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-lavender via-cloud to-sky shadow-glow-lav"
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Plus size={22} className="text-ink" />
-          </motion.button>
-          <span className="text-xs text-ink-soft">Schedule</span>
+        {/* Schedule + Focus buttons */}
+        <div className="flex items-start gap-3">
+          <FocusBeacon />
+
+          <div className="flex flex-col items-center gap-1.5">
+            <motion.button
+              type="button"
+              onClick={handleScheduleClick}
+              aria-label="Schedule a new thought"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-lavender via-cloud to-sky shadow-glow-lav"
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Plus size={22} className="text-ink" />
+            </motion.button>
+            <span className="text-xs text-ink-soft">Schedule</span>
+          </div>
         </div>
       </header>
 
-      {/* Main layout */}
       <section className="relative z-10 mx-auto mt-10 grid max-w-6xl gap-6 lg:grid-cols-[300px_1fr_300px] lg:items-center">
         <div className="order-2 lg:order-1">
-          <TodaysFlow
-            todaysTasks={todaysTasks}
-            upcomingDeadlines={upcomingDeadlines}
-          />
+          <TodaysFlow todaysTasks={todaysTasks} upcomingDeadlines={upcomingDeadlines} />
         </div>
-
         <div className="order-1 lg:order-2">
-          <MemoryJar tasks={tasks} onCompleteTask={handleComplete} />
+          <MemoryJar tasks={tasks} onCompleteTask={() => {}} />
         </div>
-
         <div className="order-3 lg:order-3">
           <MindSnapshot data={snapshot} />
         </div>
       </section>
 
-      {/* Schedule preview ribbon */}
       <section className="relative z-10 mx-auto mt-12 max-w-6xl">
         <SchedulePreview initialFlow={mockSchedule} />
       </section>
 
-      {/* NANI */}
       <NANIOrb onClick={openNani} isOpen={isNaniOpen} />
 
-      {/* Orb-expand page transition overlay */}
       <AnimatePresence>
         {isExpanding && (
           <motion.div
