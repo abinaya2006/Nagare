@@ -1,6 +1,10 @@
+import PWARegister from "@/components/PWARegister";
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AppProvider } from "@/contexts/AppContext";
+import { NaniProvider } from "@/components/providers/NaniProvider";
+import AppShell from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
   title: "Nagare",
@@ -13,8 +17,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html l ang="en">
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#E8E1FF" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Nagare" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -26,8 +35,15 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>
-        <AuthProvider>{children}</AuthProvider>
+      <body suppressHydrationWarning>
+        <AuthProvider>
+          <AppProvider>
+            <NaniProvider>
+              <AppShell>{children}</AppShell>
+            </NaniProvider>
+          </AppProvider>
+        </AuthProvider>
+        <PWARegister />
       </body>
     </html>
   );
