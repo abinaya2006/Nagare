@@ -40,6 +40,17 @@ class TaskBase(BaseModel):
     fixed_start_time: time | None = None
     fixed_end_time: time | None = None
 
+    @field_validator("fixed_start_time", "fixed_end_time", mode="before")
+    @classmethod
+    def fix_supabase_time_format(cls, v):
+        if isinstance(v, str):
+            # If Supabase sends '+00' without the minutes, add ':00' to satisfy Pydantic
+            if v.endswith("+00"):
+                return v + ":00"
+            # Or if it's sending timezone data we don't need for basic time, just strip it:
+            # return v.split("+")[0].split("-")[0]
+        return v
+
     @field_validator("title", "description")
     @classmethod
     def clean_text(cls, value: str) -> str:
