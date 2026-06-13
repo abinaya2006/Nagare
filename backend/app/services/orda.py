@@ -1,24 +1,31 @@
+import httpx
+from fastapi import HTTPException
 from app.schemas.orda import ORDARequest, OrdaResponse
-from app.schemas.tasks import TaskUpdate
 from app.services.schedules import ScheduleService
 from app.services.tasks import TaskService
-
+from app.schemas.tasks import TaskUpdate
 
 class OrdaService:
     async def process(self, user_id: str, payload: ORDARequest) -> OrdaResponse:
-        message = payload.message.lower()
-        tasks = TaskService().list_tasks(user_id)
+        # 1. Ask the AI Module for the intent and summary
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                ai_response = await client.post(
+                    "http://127.0.0.1:8000/api/ai/orda/chat",
+                    json=payload.model_dump(mode="json")
+                )
+                ai_data = ai_response.json()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"AI Module Error: {str(e)}")
 
-        if "finished" in message or "done" in message or "completed" in message:
-            if tasks:
-                TaskService().update_task(user_id, str(tasks[0].id), TaskUpdate(status="Completed"))
-            schedule = await ScheduleService().reschedule_with_preferences(user_id, payload.preferences)
-            return OrdaResponse(intent="task_completed", summary="Marked the most relevant task complete and refreshed your schedule.", schedule=schedule)
+        intent = ai_data.get("intent", "info")
+        summary = ai_data.get("summary", "I processed your request.")
 
-        if "move" in message or "tomorrow" in message or "reschedule" in message or "meeting" in message:
-            schedule = await ScheduleService().reschedule_with_preferences(user_id, payload.preferences)
-            return OrdaResponse(intent="reschedule", summary="Adjusted the plan around the new constraint.", schedule=schedule)
-
+        # 2. Execute Backend Action based on the AI's Intent
+        if intent == "info":
+            # Just talking, no schedule needed
+            return OrdaResponse(intent=intent, summary=summary, schedule=None)
+        
+        # If intent is generate_schedule or reschedule, let the backend fetch tasks and call the AI Generator
         schedule = await ScheduleService().generate_with_preferences(user_id, payload.preferences)
-        return OrdaResponse(intent="generate_schedule", summary="Generated a schedule from your current tasks.", schedule=schedule)
-
+        return OrdaResponse(intent=intent, summary=summary, schedule=schedule)
