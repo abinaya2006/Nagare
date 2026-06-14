@@ -1,4 +1,4 @@
-# Nagare 流
+# Nagare 流れ
 
 > *Where thoughts find their flow.*
 
