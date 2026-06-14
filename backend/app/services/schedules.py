@@ -127,9 +127,33 @@ class ScheduleService:
             slots = self._available_slots(day_windows, reserved)
             daily_task_count = 0
 
+            # Add routine tasks from tasks table
             for routine_item in self._routine_schedule_items(current_day, tz, routine_tasks, now):
-                if not self._overlaps_any(routine_item.start_time, routine_item.end_time, scheduled):
+                if not self._overlaps_any(
+                    routine_item.start_time,
+                    routine_item.end_time,
+                    scheduled,
+                ):
                     scheduled.append(routine_item)
+
+# Add routine blocks from routine_tasks table
+            for routine in (routine_blocks or []):
+                if self._routine_applies_to_day(routine.days, current_day):
+                    start = self._combine(current_day, routine.start_time, tz)
+                    end = self._combine(current_day, routine.end_time, tz)
+
+                    if end <= now:
+                        continue
+
+                    if not self._overlaps_any(start, end, scheduled):
+                        scheduled.append(
+                        ScheduleItem(
+                            task_id=f"routine-{routine.id}",
+                            task_title=routine.title,
+                            start_time=start,
+                            end_time=end,
+                )
+            )
 
             for slot_start, slot_end in slots:
                 cursor = slot_start
