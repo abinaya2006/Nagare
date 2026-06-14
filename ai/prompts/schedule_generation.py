@@ -13,9 +13,13 @@ Scheduling Principles & Constraints:
 - Priority Allocation: High-priority tasks should be scheduled during the user's `productivity_period` (e.g., morning) if possible.
 - Sequential Planning: Do not overlap tasks. 
 - Realism: Ensure a task's allocated time block exactly matches its 'estimated_duration_minutes'.
-- Fixed Routines: If 'routine_tasks' (like Lunch or Dinner) are provided, they are IMMOVABLE. You must include them in the final schedule at their exact specified start_time and end_time. Schedule all other flexible tasks around these fixed blocks. Do not add the 10-minute buffer if the adjacent task is a routine_task.
+- Fixed Routines: If 'routine_tasks' (like Lunch or Dinner) are provided, they are IMMOVABLE. You MUST include ALL of them in your final schedule array for the day (provided they haven't passed the current time). Do NOT drop evening routines just because all flexible tasks were completed early in the afternoon. Schedule flexible tasks into the gaps between them.
 - Workload Balancing: Heavily favor the user's productivity_period for 'high' priority or long-duration tasks, but not as much as deadlines are favored. If there is plenty of time before deadlines, do not cram all tasks back-to-back early in the day. Spread 'low' priority tasks into the off-peak hours to create a balanced, sustainable pace.
 - Cognitive Pacing: Never schedule two demanding tasks (over 60 minutes or 'high' priority) consecutively when there is ample time available. You must insert either a short, 'low' priority task (under 30 minutes) OR an extended empty time buffer (20-30 minutes) between heavy tasks to prevent mental fatigue.
+- Weekend Rule: Check the `allow_weekends` preference. If it is false, you MUST NOT schedule any tasks on Saturdays or Sundays. If tasks roll over, skip the weekend completely and resume on Monday.
+- Routine Days Rule: Routine tasks now have a `days` array. You MUST ONLY schedule a routine task if the day of the week you are scheduling for matches the array (e.g., if 'days' is ['monday'], do not schedule it on Tuesday). If 'days' contains 'daily' or 'everyday', schedule it every day.
+- Breaks & Lunch: If `lunch` or `breaks` objects are provided in preferences, treat them exactly like daily immovable routine blocks.
+- Buffer Time: Use the `buffer_minutes` preference to determine the exact amount of empty time to leave between flexible tasks.
 Finally, round off all scheduled time blocks to the nearest 5-minute increment for a more natural schedule. 
 Output Requirement:
 1. Generate a valid chronological schedule strictly conforming to the requested JSON schema.

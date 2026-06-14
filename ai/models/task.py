@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 from enum import Enum
 from uuid import UUID
@@ -24,3 +24,10 @@ class Task(BaseModel):
     status: TaskStatus = TaskStatus.pending
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def fix_status_case(cls, v):
+        if isinstance(v, str):
+            return v.capitalize()
+        return v
