@@ -8,7 +8,7 @@ from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
-from app.api import auth, health, orda, schedules, tasks
+from app.api import auth, health, orda, preferences, schedules, tasks
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.middleware.audit import AuditLogMiddleware
@@ -86,6 +86,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(preferences.router)
 app.include_router(tasks.router)
 app.include_router(schedules.router)
 app.include_router(orda.router)

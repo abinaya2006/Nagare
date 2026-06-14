@@ -44,7 +44,7 @@ export default function FlowStyleConstellation({ value, onChange }: FlowStyleCon
       </div>
 
       <AnimatePresence mode="wait">
-        {value && (
+        {value && FLOW_STYLE_INFO[value] && (
           <motion.p
             key={value}
             initial={{ opacity: 0, y: 6 }}
@@ -54,6 +54,7 @@ export default function FlowStyleConstellation({ value, onChange }: FlowStyleCon
             className="mt-4 font-display text-sm italic text-ink-soft"
           >
             &ldquo;{FLOW_STYLE_INFO[value].lore}&rdquo;
+
           </motion.p>
         )}
       </AnimatePresence>

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import type { Task } from "@/types/task";
 
 const PRIORITY_COLORS: Record<Task["priority"], string> = {
@@ -25,13 +26,49 @@ export function ThoughtDrawer({
   onDelete,
   onUpdate,
 }: ThoughtDrawerProps) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState("");
+  const [priority, setPriority] = useState<Task["priority"]>("medium");
+  const [deadline, setDeadline] = useState("");
+  const [duration, setDuration] = useState("");
+  const [notes, setNotes] = useState("");
+
   const isOpen = task !== null;
+
+  function startEdit() {
+    if (!task) return;
+    setTitle(task.title);
+    setPriority(task.priority);
+    setDeadline(task.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : "");
+    setDuration(task.duration ?? "");
+    setNotes(task.notes ?? "");
+    setEditing(true);
+  }
+
+  function handleSave() {
+    if (!task || !onUpdate) return;
+    onUpdate({
+      title,
+      priority,
+      deadline: deadline ? new Date(deadline).toISOString() : task.deadline,
+      duration,
+      notes,
+    });
+    setEditing(false);
+  }
+
+  function formatDeadline(d: string) {
+    if (!d) return "—";
+    return new Date(d).toLocaleString("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  }
 
   return (
     <AnimatePresence>
       {isOpen && task && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="backdrop"
             className="fixed inset-0 z-40"
@@ -41,13 +78,11 @@ export function ThoughtDrawer({
             onClick={onClose}
           />
 
-          {/* Drawer */}
           <motion.aside
             key="drawer"
             className="fixed bottom-0 right-0 top-0 z-50 flex w-[340px] flex-col"
             style={{
-              background:
-                "linear-gradient(180deg, rgba(13,18,37,0.99) 0%, rgba(7,11,24,0.99) 100%)",
+              background: "linear-gradient(180deg, rgba(13,18,37,0.99) 0%, rgba(7,11,24,0.99) 100%)",
               borderLeft: "1px solid rgba(255,255,255,0.08)",
               backdropFilter: "blur(24px)",
             }}
@@ -56,12 +91,10 @@ export function ThoughtDrawer({
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 340, damping: 34 }}
           >
-            {/* Ambient glow */}
             <div
               className="pointer-events-none absolute inset-0"
               style={{
-                background:
-                  "linear-gradient(180deg, rgba(124,111,205,0.06) 0%, transparent 40%, rgba(78,205,196,0.05) 100%)",
+                background: "linear-gradient(180deg, rgba(124,111,205,0.06) 0%, transparent 40%, rgba(78,205,196,0.05) 100%)",
               }}
             />
 
@@ -71,23 +104,13 @@ export function ThoughtDrawer({
               style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
             >
               <h2
-                className="font-serif text-lg"
-                style={{
-                  fontFamily: "'DM Serif Display', serif",
-                  color: "rgba(255,255,255,0.9)",
-                }}
+                style={{ fontFamily: "'DM Serif Display', serif", color: "rgba(255,255,255,0.9)", fontSize: 18 }}
               >
-                Thought Details
+                {editing ? "Edit Thought" : "Thought Details"}
               </h2>
               <button
                 onClick={onClose}
-                className="text-xl transition-colors"
-                style={{
-                  color: "rgba(255,255,255,0.25)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                }}
+                style={{ color: "rgba(255,255,255,0.25)", background: "none", border: "none", cursor: "pointer", fontSize: 20 }}
               >
                 ✕
               </button>
@@ -95,90 +118,150 @@ export function ThoughtDrawer({
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-5 py-5">
-              <Field label="Thought">
-                <span
-                  className="text-[16px] font-medium"
-                  style={{ color: "rgba(255,255,255,0.9)" }}
-                >
-                  {task.title}
-                </span>
-              </Field>
+              {editing ? (
+                <>
+                  <Field label="Thought">
+                    <input
+                      value={title}
+                      onChange={e => setTitle(e.target.value)}
+                      className="w-full rounded-xl px-3 py-2 text-sm"
+                      style={{
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        color: "rgba(255,255,255,0.9)",
+                        outline: "none",
+                      }}
+                    />
+                  </Field>
 
-              <Field label="Priority">
-                <span
-                  className="inline-block rounded-xl px-3 py-0.5 text-[12px] font-medium capitalize"
-                  style={{
-                    background: `${PRIORITY_COLORS[task.priority]}20`,
-                    color: PRIORITY_COLORS[task.priority],
-                  }}
-                >
-                  {task.priority}
-                </span>
-              </Field>
+                  <Field label="Priority">
+                    <select
+                      value={priority}
+                      onChange={e => setPriority(e.target.value as Task["priority"])}
+                      className="w-full rounded-xl px-3 py-2 text-sm"
+                      style={{
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        color: "rgba(255,255,255,0.9)",
+                        outline: "none",
+                      }}
+                    >
+                      <option value="critical">Critical</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                  </Field>
 
-              <Field label="State">
-                <span
-                  className="capitalize"
-                  style={{ color: "rgba(255,255,255,0.6)" }}
-                >
-                  {task.state === "overdue"
-                    ? "Calling"
-                    : task.state.charAt(0).toUpperCase() + task.state.slice(1)}
-                </span>
-              </Field>
+                  <Field label="Deadline">
+                    <input
+                      type="datetime-local"
+                      value={deadline}
+                      onChange={e => setDeadline(e.target.value)}
+                      className="w-full rounded-xl px-3 py-2 text-sm"
+                      style={{
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        color: "rgba(255,255,255,0.9)",
+                        outline: "none",
+                        colorScheme: "dark",
+                      }}
+                    />
+                  </Field>
 
-              <Field label="Deadline">
-                <span style={{ color: "rgba(255,255,255,0.7)" }}>
-                  {task.deadline}
-                </span>
-              </Field>
+                  <Field label="Duration (e.g. 90m, 2h)">
+                    <input
+                      value={duration}
+                      onChange={e => setDuration(e.target.value)}
+                      className="w-full rounded-xl px-3 py-2 text-sm"
+                      style={{
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        color: "rgba(255,255,255,0.9)",
+                        outline: "none",
+                      }}
+                    />
+                  </Field>
 
-              <Field label="Duration">
-                <span style={{ color: "rgba(255,255,255,0.7)" }}>
-                  {task.duration}
-                </span>
-              </Field>
+                  <Field label="Notes">
+                    <textarea
+                      value={notes}
+                      onChange={e => setNotes(e.target.value)}
+                      rows={3}
+                      className="w-full rounded-xl px-3 py-2 text-sm"
+                      style={{
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        color: "rgba(255,255,255,0.9)",
+                        outline: "none",
+                        resize: "none",
+                      }}
+                    />
+                  </Field>
+                </>
+              ) : (
+                <>
+                  <Field label="Thought">
+                    <span style={{ fontSize: 16, fontWeight: 500, color: "rgba(255,255,255,0.9)" }}>
+                      {task.title}
+                    </span>
+                  </Field>
 
-              <Field label="Category">
-                <span style={{ color: "rgba(255,255,255,0.7)" }}>
-                  {task.category}
-                </span>
-              </Field>
+                  <Field label="Priority">
+                    <span
+                      className="inline-block rounded-xl px-3 py-0.5 text-[12px] font-medium capitalize"
+                      style={{
+                        background: `${PRIORITY_COLORS[task.priority]}20`,
+                        color: PRIORITY_COLORS[task.priority],
+                      }}
+                    >
+                      {task.priority}
+                    </span>
+                  </Field>
 
-              <Field label="Suggested Energy">
-                <span style={{ color: "rgba(255,255,255,0.7)" }}>
-                  {task.energy}
-                </span>
-              </Field>
+                  <Field label="State">
+                    <span className="capitalize" style={{ color: "rgba(255,255,255,0.6)" }}>
+                      {task.state === "overdue" ? "Calling" : task.state?.charAt(0).toUpperCase() + task.state?.slice(1)}
+                    </span>
+                  </Field>
 
-              {task.notes && (
-                <Field label="Notes">
-                  <span
-                    className="block text-[13px] leading-relaxed"
-                    style={{ color: "rgba(255,255,255,0.45)" }}
-                  >
-                    {task.notes}
-                  </span>
-                </Field>
+                  <Field label="Deadline">
+                    <span style={{ color: "rgba(255,255,255,0.7)" }}>
+                      {formatDeadline(task.deadline)}
+                    </span>
+                  </Field>
+
+                  <Field label="Duration">
+                    <span style={{ color: "rgba(255,255,255,0.7)" }}>{task.duration}</span>
+                  </Field>
+
+                  <Field label="Category">
+                    <span style={{ color: "rgba(255,255,255,0.7)" }}>{task.category}</span>
+                  </Field>
+
+                  <Field label="Suggested Energy">
+                    <span style={{ color: "rgba(255,255,255,0.7)" }}>{task.energy}</span>
+                  </Field>
+
+                  {task.notes && (
+                    <Field label="Notes">
+                      <span style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(255,255,255,0.45)" }}>
+                        {task.notes}
+                      </span>
+                    </Field>
+                  )}
+
+                  <Field label="Constellation">
+                    <div
+                      className="flex items-center gap-2 rounded-xl px-3.5 py-2.5"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    >
+                      <span style={{ color: "#F4C56A" }}>✦</span>
+                      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>{task.constellation}</span>
+                    </div>
+                  </Field>
+                </>
               )}
-
-              <Field label="Constellation">
-                <div
-                  className="flex items-center gap-2 rounded-xl px-3.5 py-2.5"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                  }}
-                >
-                  <span style={{ color: "#F4C56A" }}>✦</span>
-                  <span
-                    className="text-[13px]"
-                    style={{ color: "rgba(255,255,255,0.55)" }}
-                  >
-                    {task.constellation}
-                  </span>
-                </div>
-              </Field>
             </div>
 
             {/* Footer */}
@@ -186,41 +269,43 @@ export function ThoughtDrawer({
               className="flex gap-2.5 px-5 py-4"
               style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
             >
-              <DrawerBtn
-                onClick={() => {
-                  onComplete(task.id);
-                  onClose();
-                }}
-                style={{
-                  background: "rgba(78,205,196,0.12)",
-                  color: "#4ECDC4",
-                  border: "1px solid rgba(78,205,196,0.28)",
-                }}
-              >
-                ✓ Resolve
-              </DrawerBtn>
-              <DrawerBtn
-                style={{
-                  background: "rgba(124,111,205,0.12)",
-                  color: "#7C6FCD",
-                  border: "1px solid rgba(124,111,205,0.28)",
-                }}
-              >
-                ✎ Edit
-              </DrawerBtn>
-              <DrawerBtn
-                onClick={() => {
-                  onDelete(task.id);
-                  onClose();
-                }}
-                style={{
-                  background: "rgba(255,139,107,0.08)",
-                  color: "#FF8B6B",
-                  border: "1px solid rgba(255,139,107,0.2)",
-                }}
-              >
-                ✕ Release
-              </DrawerBtn>
+              {editing ? (
+                <>
+                  <DrawerBtn
+                    onClick={handleSave}
+                    style={{ background: "rgba(78,205,196,0.12)", color: "#4ECDC4", border: "1px solid rgba(78,205,196,0.28)" }}
+                  >
+                    ✓ Save
+                  </DrawerBtn>
+                  <DrawerBtn
+                    onClick={() => setEditing(false)}
+                    style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.1)" }}
+                  >
+                    ✕ Cancel
+                  </DrawerBtn>
+                </>
+              ) : (
+                <>
+                  <DrawerBtn
+                    onClick={() => { onComplete(task.id); onClose(); }}
+                    style={{ background: "rgba(78,205,196,0.12)", color: "#4ECDC4", border: "1px solid rgba(78,205,196,0.28)" }}
+                  >
+                    ✓ Resolve
+                  </DrawerBtn>
+                  <DrawerBtn
+                    onClick={startEdit}
+                    style={{ background: "rgba(124,111,205,0.12)", color: "#7C6FCD", border: "1px solid rgba(124,111,205,0.28)" }}
+                  >
+                    ✎ Edit
+                  </DrawerBtn>
+                  <DrawerBtn
+                    onClick={() => { onDelete(task.id); onClose(); }}
+                    style={{ background: "rgba(255,139,107,0.08)", color: "#FF8B6B", border: "1px solid rgba(255,139,107,0.2)" }}
+                  >
+                    ✕ Release
+                  </DrawerBtn>
+                </>
+              )}
             </div>
           </motion.aside>
         </>
@@ -229,19 +314,10 @@ export function ThoughtDrawer({
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-4">
-      <div
-        className="mb-1.5 text-[11px] uppercase tracking-widest"
-        style={{ color: "rgba(255,255,255,0.25)" }}
-      >
+      <div className="mb-1.5 text-[11px] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.25)" }}>
         {label}
       </div>
       <div>{children}</div>
@@ -249,25 +325,12 @@ function Field({
   );
 }
 
-function DrawerBtn({
-  children,
-  onClick,
-  style,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  style?: React.CSSProperties;
-}) {
+function DrawerBtn({ children, onClick, style }: { children: React.ReactNode; onClick?: () => void; style?: React.CSSProperties }) {
   return (
     <button
       onClick={onClick}
       className="flex-1 rounded-[10px] py-2.5 text-[12.5px] font-medium transition-all hover:brightness-110 active:scale-95"
-      style={{
-        fontFamily: "inherit",
-        border: "none",
-        cursor: "pointer",
-        ...style,
-      }}
+      style={{ fontFamily: "inherit", border: "none", cursor: "pointer", ...style }}
     >
       {children}
     </button>

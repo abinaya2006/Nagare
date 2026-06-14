@@ -18,6 +18,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+
+
   async function handleLogin() {
     if (!email || !password) {
       setError("Enter your email and password.");
