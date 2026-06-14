@@ -102,21 +102,7 @@ export default function DashboardPage() {
 
         <div className="flex items-start gap-3">
           <FocusBeacon />
-          <div className="flex flex-col items-center gap-1.5">
-            <motion.button
-              type="button"
-              onClick={handleScheduleClick}
-              aria-label="Schedule a new thought"
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-lavender via-cloud to-sky shadow-glow-lav"
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.95 }}
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Plus size={22} className="text-ink" />
-            </motion.button>
-            <span className="text-xs text-ink-soft">Schedule</span>
-          </div>
+
         </div>
       </header>
 
