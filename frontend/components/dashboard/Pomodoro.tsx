@@ -233,7 +233,7 @@ function PomoModal({
                 Focus Beacon
               </div>
               <div style={{ fontSize: 9, color: TEXT_SOFT, fontFamily: "sans-serif", letterSpacing: "0.09em", marginTop: 2 }}>
-                ポモドーロ
+                Pomodoro
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -517,8 +517,22 @@ export default function FocusBeacon() {
               color: isRunning ? (mode === "focus" ? "#5A8FBF" : "#8B7FCC") : phase === "complete" ? "#C4922A" : TEXT_SOFT,
               letterSpacing: isRunning ? "0.02em" : 0, lineHeight: 1, fontFamily: "sans-serif",
             }}>
-              {isRunning ? fmtTime(secondsLeft) : phase === "complete" ? "✦" : "Flow"}
-            </span>
+              {isRunning ? (
+                <span style={{
+                  fontSize: 9, fontWeight: 500,
+                  color: mode === "focus" ? "#5A8FBF" : "#8B7FCC",
+                  letterSpacing: "0.02em", lineHeight: 1, fontFamily: "sans-serif",
+                }}>
+                  {fmtTime(secondsLeft)}
+                </span>
+              ) : phase === "complete" ? (
+                <span style={{ fontSize: 11, color: "#C4922A" }}>✦</span>
+              ) : (
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={TEXT_SOFT} strokeWidth="1.5" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <polyline points="12 7 12 12 15 15" />
+                </svg>
+              )}</span>
             {isRunning && (
               <span style={{ fontSize: 7, color: TEXT_SOFT, letterSpacing: "0.06em", fontFamily: "sans-serif", opacity: 0.6 }}>
                 {mode}

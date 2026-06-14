@@ -20,14 +20,11 @@ type TaskContextValue = {
 const TaskContext = createContext<TaskContextValue | null>(null);
 const cacheKey = "nagare-tasks";
 
-// ─── Backend → Frontend ────────────────────────────────────────────────────
 function mapBackendTask(t: any): Task {
   const deadline = t.deadline ? new Date(t.deadline) : null;
   const hour = deadline ? deadline.getHours() : 12;
-  const segment: TaskSegment =
-    hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  const segment: TaskSegment = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
-  // backend: pending | scheduled | completed  →  frontend: waiting | flowing | resolved
   const statusMap: Record<string, TaskState> = {
     pending: "waiting",
     scheduled: "flowing",
@@ -35,21 +32,12 @@ function mapBackendTask(t: any): Task {
   };
 
   const priorityMap: Record<string, TaskPriority> = {
-    high: "high",
-    medium: "medium",
-    low: "low",
-    critical: "critical",
+    high: "high", medium: "medium", low: "low", critical: "critical",
   };
 
-  // derive "overdue" from deadline on the frontend side
   const mappedState: TaskState = statusMap[t.status] ?? "waiting";
-  const isOverdue =
-    mappedState === "waiting" &&
-    deadline !== null &&
-    deadline < new Date();
+  const isOverdue = mappedState === "waiting" && deadline !== null && deadline < new Date();
   const state: TaskState = isOverdue ? "overdue" : mappedState;
-
-  // parse "30m" / "1h 30m" back from stored minutes
   const mins: number = t.estimated_duration_minutes ?? 30;
 
   return {
@@ -70,10 +58,7 @@ function mapBackendTask(t: any): Task {
   };
 }
 
-// ─── Frontend → Backend ────────────────────────────────────────────────────
-// Converts a TaskInput (frontend shape) to the backend TaskCreate/TaskUpdate shape.
 function toBackendCreate(task: TaskInput): Record<string, unknown> {
-  // parse duration string "30m" | "1h" | "1h 30m" → minutes
   let estimated_duration_minutes = 30;
   if (task.duration) {
     const hMatch = task.duration.match(/(\d+)h/);
@@ -82,15 +67,9 @@ function toBackendCreate(task: TaskInput): Record<string, unknown> {
       (hMatch ? parseInt(hMatch[1]) * 60 : 0) +
       (mMatch ? parseInt(mMatch[1]) : 0) || 30;
   }
-
-  // frontend state → backend status (only pending/scheduled/completed allowed)
   const stateToStatus: Record<string, string> = {
-    waiting: "pending",
-    flowing: "scheduled",
-    resolved: "completed",
-    overdue: "pending", // overdue is a derived state; store as pending
+    waiting: "pending", flowing: "scheduled", resolved: "completed", overdue: "pending",
   };
-
   return {
     title: task.title,
     description: task.notes ?? "",
@@ -104,22 +83,16 @@ function toBackendCreate(task: TaskInput): Record<string, unknown> {
 
 function toBackendUpdate(task: Partial<TaskInput>): Record<string, unknown> {
   const patch: Record<string, unknown> = {};
-
   if (task.title !== undefined) patch.title = task.title;
   if (task.notes !== undefined) patch.description = task.notes;
   if (task.deadline !== undefined) patch.deadline = task.deadline;
   if (task.priority !== undefined) patch.priority = task.priority;
-
   if (task.state !== undefined) {
     const stateToStatus: Record<string, string> = {
-      waiting: "pending",
-      flowing: "scheduled",
-      resolved: "completed",
-      overdue: "pending",
+      waiting: "pending", flowing: "scheduled", resolved: "completed", overdue: "pending",
     };
     patch.status = stateToStatus[task.state] ?? "pending";
   }
-
   if (task.duration !== undefined) {
     const hMatch = task.duration.match(/(\d+)h/);
     const mMatch = task.duration.match(/(\d+)m/);
@@ -127,20 +100,16 @@ function toBackendUpdate(task: Partial<TaskInput>): Record<string, unknown> {
       (hMatch ? parseInt(hMatch[1]) * 60 : 0) +
       (mMatch ? parseInt(mMatch[1]) : 0) || 30;
   }
-
   return patch;
 }
 
-// ─── Provider ──────────────────────────────────────────────────────────────
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const { user, session } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setAuthToken(session?.access_token);
-  }, [session]);
+  useEffect(() => { setAuthToken(session?.access_token); }, [session]);
 
   const refresh = useCallback(async () => {
     if (!user) { setTasks([]); return; }
@@ -184,7 +153,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     },
 
     async updateTask(id, task) {
-      // optimistic update (keep frontend shape)
       setTasks((prev) =>
         prev.map((item) => item.id === id ? { ...item, ...task } as Task : item)
       );
@@ -197,13 +165,23 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     },
 
     async completeTask(id) {
+      // Optimistic: mark resolved immediately
       setTasks((prev) =>
-        prev.map((item) => item.id === id ? { ...item, state: "resolved" } as Task : item)
+        prev.map((item) =>
+          item.id === id ? { ...item, state: "resolved" as TaskState } : item
+        )
       );
       try {
-        await api.patch(`/tasks/${id}/complete`);
+        // Use PUT instead of PATCH to avoid CORS preflight rejection
+        await api.put(`/tasks/${id}`, { status: "completed" });
       } catch {
-        await enqueue({ method: "patch", url: `/tasks/${id}/complete`, data: {} });
+        // Revert on failure
+        setTasks((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, state: "waiting" as TaskState } : item
+          )
+        );
+        await enqueue({ method: "put", url: `/tasks/${id}`, data: { status: "completed" } });
       }
     },
 
