@@ -63,7 +63,7 @@ export default function Sidebar() {
       {/* ── Desktop sidebar ── */}
       <nav
         aria-label="Main navigation"
-        className="glass-strong relative z-20 hidden shrink-0 flex-col items-center gap-6 overflow-hidden px-3 py-8 sm:flex sm:h-screen sm:w-20 lg:w-56 lg:items-stretch lg:px-4"
+        className="glass-strong fixed left-0 top-0 z-20 hidden shrink-0 flex-col items-center gap-6 overflow-hidden px-3 py-8 sm:flex sm:h-screen sm:w-20 lg:w-56 lg:items-stretch lg:px-4"
       >
         <FloatingParticles count={10} />
 
