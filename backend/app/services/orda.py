@@ -1,3 +1,4 @@
+import os
 import httpx
 from app.schemas.orda import OrdaHistoryResponse, ORDARequest, OrdaResponse
 from app.schemas.schedules import WorkPreferences  # <-- Added this import
@@ -22,9 +23,8 @@ class OrdaService:
         # 3. Call the AI Module
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
-                ai_response = await client.post(
-                    "http://127.0.0.1:8000/api/ai/orda/chat", json=ai_payload
-                )
+                ai_url = os.getenv("AI_SERVICE_URL", "http://127.0.0.1:8000")
+                ai_response = await client.post(f"{ai_url}/api/ai/orda/chat", json=ai_payload)
                 ai_response.raise_for_status()
                 ai_data = ai_response.json()
         except Exception as e:
