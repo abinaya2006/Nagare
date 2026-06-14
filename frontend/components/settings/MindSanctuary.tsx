@@ -1,8 +1,9 @@
 "use client";
-
+import { useEffect, useState } from "react";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useSettings } from "@/hooks/useSettings";
-import { DEFAULT_PROFILE, SLEEP_HOURS_INFO } from "@/types/settings";
+import { DEFAULT_PROFILE, SLEEP_HOURS_INFO, type UserProfile } from "@/types/settings";
+import { api } from "@/services/api";
 
 import AmbientBackground from "./AmbientBackground";
 import ProfileCrystal from "./ProfileCrystal";
@@ -17,6 +18,20 @@ import PersonalizeButton from "./PersonalizeButton";
 import ReturnToStillness from "./ReturnToStillness";
 
 export default function MindSanctuary() {
+  const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
+
+  useEffect(() => {
+    api.get("/auth/me").then(({ data }) => {
+      const email: string = data?.email ?? "";
+      const name = data?.name || email.split("@")[0];
+      setProfile({
+        name,
+        email,
+        avatarInitial: name.charAt(0).toUpperCase(),
+      });
+    }).catch(() => {});
+  }, []);
+
   const {
     preferences,
     loading,
@@ -25,7 +40,6 @@ export default function MindSanctuary() {
     removeProtectedBlock,
   } = usePreferences();
 
-  const profile = DEFAULT_PROFILE;
   const { insights, saveError, save, logout, isLoggedOut } = useSettings(preferences, profile);
   const moonPhase = SLEEP_HOURS_INFO[preferences.sleepHours].moonPhase;
 
@@ -38,16 +52,13 @@ export default function MindSanctuary() {
   return (
     <div className="relative pb-32">
       <AmbientBackground circadianPeriod={preferences.circadianPeriod} moonPhase={moonPhase} />
-
       <header className="mb-6">
         <h1 className="font-display text-2xl font-medium italic text-ink sm:text-3xl">Settings</h1>
         <p className="mt-1 text-sm text-ink-soft">A place where your flow learns who you are.</p>
       </header>
-
       <div className="mb-6">
         <ProfileCrystal profile={profile} preferences={preferences} />
       </div>
-
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <CircadianRiver
@@ -77,16 +88,13 @@ export default function MindSanctuary() {
           />
           <ReturnToStillness onLogout={logout} isLoggedOut={isLoggedOut} />
         </div>
-
         <div>
           <NANIInsights insights={insights} />
         </div>
       </div>
-
       {saveError && (
         <p className="mt-4 text-center text-xs text-coral-glow">{saveError}</p>
       )}
-
       <PersonalizeButton onSave={save} />
     </div>
   );
