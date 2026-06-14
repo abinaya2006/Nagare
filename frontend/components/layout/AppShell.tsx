@@ -18,7 +18,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <AmbientBackground />
       <FloatingParticles count={16} />
       {!isAuthPage && <Sidebar />}
-      <div className={`relative z-10 flex-1 ${!isAuthPage ? "nagare-main px-4 pb-28 pt-6 sm:px-6 sm:pb-6 sm:pt-6 lg:px-8" : "px-4 pb-28 pt-6 sm:px-6 sm:pb-6 sm:pt-6 lg:px-8"}`}>
+      <div className={`relative z-10 flex-1 ${!isAuthPage ? "nagare-main sm:ml-20 lg:ml-56 px-4 pb-28 pt-6 sm:px-6 sm:pb-6 sm:pt-6 lg:px-8" : "px-4 pb-28 pt-6 sm:px-6 sm:pb-6 sm:pt-6 lg:px-8"}`}>
         {children}
       </div>
       {!isAuthPage && <NaniSidebarMount />}
