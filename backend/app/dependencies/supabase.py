@@ -1,12 +1,13 @@
-from supabase import create_client, Client
 from app.core.config import get_settings
 
-settings = get_settings()
+from supabase import Client, create_client
 
+settings = get_settings()
 supabase: Client = create_client(
     settings.supabase_url,
-    settings.supabase_anon_key
+    settings.supabase_service_role_key,  # ← changed from supabase_anon_key
 )
+
 
 def get_supabase() -> Client:
     return supabase

@@ -50,23 +50,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       session,
       loading,
+
       async login(email, password) {
+        document.cookie = "logged_out=; path=/; max-age=0; SameSite=Lax";
+
         const { data } = await api.post("/auth/login", { email, password });
         await supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token,
         });
         setAuthToken(data.access_token);
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise((r) => setTimeout(r, 200));
+
         try {
           const { data: prefsData } = await api.get("/preferences/me");
           const hasPreferences = !!prefsData?.preferences;
-          router.push(hasPreferences ? '/dashboard' : '/onboarding');
+          // ✅ hard navigate so browser sends fresh cookies to middleware
+          window.location.href = hasPreferences ? "/dashboard" : "/onboarding";
         } catch {
-          router.push('/onboarding');
+          window.location.href = "/onboarding";
         }
       },
+
       async signup(email, password) {
+        // ✅ Clear logout flag on signup too
+        document.cookie = "logged_out=; path=/; max-age=0; SameSite=Lax";
+
         await api.post("/auth/signup", { email, password });
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData.session) {
@@ -76,18 +85,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           router.push("/login?confirm=true");
         }
       },
+
       async logout() {
-        try {
-          const session = await supabase.auth.getSession();
-          const token = session.data.session?.access_token;
-          await api.post("/auth/logout", {}, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-        } catch {}
+        // ✅ Skip backend call — token may be undefined, cookie is httponly so backend can't clear it properly anyway
         await supabase.auth.signOut();
         setAuthToken(undefined);
-        localStorage.removeItem("nagare-auth");
-        localStorage.removeItem("nagare_onboarding");
+        localStorage.clear();
+        sessionStorage.clear();
+
+        // ✅ Set logout flag — middleware checks this to block access even if pulse_access_token cookie lingers
+        document.cookie = "logged_out=true; path=/; SameSite=Lax";
+
         window.location.href = "/login";
       },
     }),

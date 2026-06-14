@@ -15,11 +15,8 @@ import NANIOrb from "@/components/dashboard/NANIOrb";
 import FocusBeacon from "@/components/dashboard/Pomodoro";
 import { useNaniSidebar } from "@/components/providers/NaniProvider";
 import { useTasks } from "@/contexts/TaskContext";
-
+import { useAuth } from "@/contexts/AuthContext"; // ✅ added
 import { mockSchedule } from "@/lib/mock-data";
-
-
-
 
 function isSameDay(a: Date, b: Date) {
   return (
@@ -32,6 +29,7 @@ function isSameDay(a: Date, b: Date) {
 export default function DashboardPage() {
   const router = useRouter();
   const { tasks, loading } = useTasks();
+  const { session, loading: authLoading } = useAuth(); // ✅ added
   const [isExpanding, setIsExpanding] = useState(false);
   const [greeting, setGreeting] = useState("Hello");
   const [userName, setUserName] = useState("there");
@@ -54,22 +52,31 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // ✅ Fixed: wait for auth session before calling /auth/me
   useEffect(() => {
-    api.get("/auth/me").then(({ data }) => {
-      const email: string = data?.email ?? "";
-      const name = data?.name || email.split("@")[0];
-      setUserName(name);
-    }).catch(() => {});
-  }, []);
+    if (authLoading || !session?.access_token) return;
+
+    api
+      .get("/auth/me")
+      .then(({ data }) => {
+        const email: string = data?.email ?? "";
+        const name = data?.name || email.split("@")[0];
+        setUserName(name);
+      })
+      .catch(() => {});
+  }, [authLoading, session]);
 
   const now = new Date();
   const pendingTasks = tasks.filter((t) => t.state !== "resolved");
   const todaysTasks = pendingTasks.filter((t) =>
-    t.deadline ? isSameDay(new Date(t.deadline), now) : false
+    t.deadline ? isSameDay(new Date(t.deadline), now) : false,
   );
   const upcomingDeadlines = pendingTasks
     .filter((t) => t.deadline && !isSameDay(new Date(t.deadline), now))
-    .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime());
+    .sort(
+      (a, b) =>
+        new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime(),
+    );
 
   const snapshot = {
     total: tasks.length,
@@ -93,7 +100,9 @@ export default function DashboardPage() {
             {greeting}, {userName}.
           </h1>
           <p className="mt-1 text-sm text-ink-soft">
-            {loading ? "Gathering your thoughts…" : "Your thoughts are gathering."}
+            {loading
+              ? "Gathering your thoughts…"
+              : "Your thoughts are gathering."}
           </p>
         </div>
 
@@ -121,7 +130,10 @@ export default function DashboardPage() {
 
       <section className="relative z-10 mx-auto mt-10 grid max-w-6xl gap-6 lg:grid-cols-[300px_1fr_300px] lg:items-center">
         <div className="order-2 lg:order-1">
-          <TodaysFlow todaysTasks={todaysTasks} upcomingDeadlines={upcomingDeadlines} />
+          <TodaysFlow
+            todaysTasks={todaysTasks}
+            upcomingDeadlines={upcomingDeadlines}
+          />
         </div>
         <div className="order-1 lg:order-2">
           <MemoryJar tasks={tasks} onCompleteTask={() => {}} />
