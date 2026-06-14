@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from app.schemas.schedules import ScheduleOutput, WorkPreferences
+from typing import Any
 
 
 class ORDARequest(BaseModel):
@@ -11,4 +12,3 @@ class OrdaResponse(BaseModel):
     intent: str
     summary: str
     schedule: ScheduleOutput | None = None
-
