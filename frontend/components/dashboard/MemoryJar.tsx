@@ -8,38 +8,45 @@ import type { Task } from "@/types";
 
 interface MemoryJarProps {
   tasks: Task[];
-  onCompleteTask: (taskId: string) => void;
+  onCompleteTask: (taskId: string) => Promise<void>;
 }
 
 const JAR_RADIUS = 150;
 
 export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [completing, setCompleting] = useState<string | null>(null);
   const jarRef = useRef<HTMLDivElement>(null);
-  const pendingTasks = tasks.filter((t) => !t.completed);
+
+  // Only show pending (non-resolved) tasks as orbs
+  const pendingTasks = tasks.filter((t) => t.state !== "resolved" && t.id !== completing);
   const orbIds = pendingTasks.map((t) => t.id);
-  const { positions, setOrbPosition, releaseOrb } = useTaskPhysics(
-    orbIds,
-    JAR_RADIUS,
-    30,
-  );
+  const { positions, setOrbPosition, releaseOrb } = useTaskPhysics(orbIds, JAR_RADIUS, 30);
 
   const pendingCount = pendingTasks.length;
   const allDone = pendingCount === 0;
 
-  // Clamp drag position inside jar radius
   const handleDrag = (id: string, pos: { x: number; y: number }) => {
     const dist = Math.sqrt(pos.x * pos.x + pos.y * pos.y);
     const orbR = 30;
     const maxDist = JAR_RADIUS - orbR;
     if (dist > maxDist) {
       const angle = Math.atan2(pos.y, pos.x);
-      setOrbPosition(id, {
-        x: Math.cos(angle) * maxDist,
-        y: Math.sin(angle) * maxDist,
-      });
+      setOrbPosition(id, { x: Math.cos(angle) * maxDist, y: Math.sin(angle) * maxDist });
     } else {
       setOrbPosition(id, pos);
+    }
+  };
+
+  const handleComplete = async (taskId: string) => {
+    // Close modal immediately
+    setActiveTask(null);
+    // Mark as completing so orb disappears from jar instantly
+    setCompleting(taskId);
+    try {
+      await onCompleteTask(taskId);
+    } finally {
+      setCompleting(null);
     }
   };
 
@@ -63,15 +70,9 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
         ref={jarRef}
         className="absolute bottom-0 h-[88%] w-[88%] rounded-[48%_48%_42%_42%/40%_40%_46%_46%] backdrop-blur-md overflow-hidden"
         animate={{ scale: allDone ? [1, 1.02, 1] : [1, 1.012, 1] }}
-        transition={{
-          duration: allDone ? 3 : 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        transition={{ duration: allDone ? 3 : 8, repeat: Infinity, ease: "easeInOut" }}
         style={{
-          border: allDone
-            ? "1.5px solid rgba(201,182,255,0.8)"
-            : "1.5px solid rgba(255,255,255,0.7)",
+          border: allDone ? "1.5px solid rgba(201,182,255,0.8)" : "1.5px solid rgba(255,255,255,0.7)",
           background: allDone
             ? "linear-gradient(160deg, rgba(220,210,255,0.45) 0%, rgba(201,182,255,0.25) 40%, rgba(221,238,255,0.3) 100%)"
             : "linear-gradient(160deg, rgba(255,255,255,0.35) 0%, rgba(232,225,255,0.2) 40%, rgba(221,238,255,0.25) 100%)",
@@ -82,7 +83,6 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
         }}
         aria-hidden="true"
       >
-        {/* liquid fill at the bottom */}
         <motion.div
           className="absolute bottom-0 left-0 right-0"
           animate={{ height: allDone ? "30%" : "18%" }}
@@ -94,12 +94,8 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
             borderRadius: "0 0 48% 48%",
           }}
         />
-
-        {/* glass reflection streaks */}
         <div className="absolute left-[12%] top-[8%] h-[55%] w-[14%] rounded-full bg-white/40 blur-md" />
         <div className="absolute right-[18%] top-[14%] h-[30%] w-[7%] rounded-full bg-white/25 blur-sm" />
-
-        {/* shimmer rim at top */}
         <div className="absolute top-0 left-[10%] right-[10%] h-[3px] rounded-full bg-white/60 blur-[1px]" />
       </motion.div>
 
@@ -108,12 +104,8 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
         aria-hidden="true"
         className="absolute top-[6%] h-[10%] w-[40%] rounded-t-[40%] backdrop-blur-md"
         style={{
-          border: allDone
-            ? "1.5px solid rgba(201,182,255,0.7)"
-            : "1.5px solid rgba(255,255,255,0.7)",
-          background: allDone
-            ? "rgba(220,210,255,0.35)"
-            : "rgba(255,255,255,0.30)",
+          border: allDone ? "1.5px solid rgba(201,182,255,0.7)" : "1.5px solid rgba(255,255,255,0.7)",
+          background: allDone ? "rgba(220,210,255,0.35)" : "rgba(255,255,255,0.30)",
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
           transition: "background 1s, border-color 1s",
         }}
@@ -136,7 +128,7 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
         </AnimatePresence>
       </div>
 
-      {/* All done sparkle overlay */}
+      {/* All done overlay */}
       <AnimatePresence>
         {allDone && (
           <motion.div
@@ -145,7 +137,7 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
             exit={{ opacity: 0 }}
             className="pointer-events-none absolute inset-0 flex items-center justify-center"
           >
-            <p className="font-display text-sm italic text-lavglow text-black drop-shadow">
+            <p className="font-display text-sm italic text-black drop-shadow">
               all clear
             </p>
           </motion.div>
@@ -165,10 +157,7 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
       <TaskDetailModal
         task={activeTask}
         onClose={() => setActiveTask(null)}
-        onComplete={(id) => {
-          onCompleteTask(id);
-          setActiveTask(null);
-        }}
+        onComplete={handleComplete}
       />
     </section>
   );

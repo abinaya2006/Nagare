@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import { api } from "@/services/api";
+import { supabase } from "@/lib/supabase";
 import type { NaniMessage } from "@/types";
 
 interface NaniContextValue {
@@ -44,9 +45,25 @@ export function NaniProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
+      // ✅ Get fresh token from Supabase session
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        setError("You need to be logged in for NANI to respond.");
+        setIsThinking(false);
+        return;
+      }
+
+      const authHeader = `Bearer ${token}`;
+
+      // Get preferences (optional, don't block if fails)
       let preferences = {};
       try {
-        const { data: prefsData } = await api.get("/preferences/me");
+        const { data: prefsData } = await api.get("/preferences/me", {
+          headers: { Authorization: authHeader },
+          timeout: 5000,
+        });
         const p = prefsData?.preferences;
         if (p) {
           preferences = {
@@ -60,49 +77,76 @@ export function NaniProvider({ children }: { children: ReactNode }) {
       } catch {}
 
       const { data } = await api.post(
-        "http://localhost:8000/orda/process",
+        "/orda/process",
         { message: trimmed, preferences },
-        { headers: { Authorization: api.defaults.headers.common.Authorization as string } }
+        { headers: { Authorization: authHeader } },
       );
-
-      console.log('🎯 NANI intent:', data?.intent);
-      console.log('📅 NANI schedule:', data?.schedule);
 
       const reply: NaniMessage = {
         id: `nani-${Date.now()}`,
         role: "nani",
-        content: data?.summary ?? "I'm holding that thought with you.",
+        content: data?.response ?? data?.summary ?? "I'm holding that thought with you.",
         timestamp: new Date().toISOString(),
       };
 
-      if (data?.schedule?.schedule?.length > 0) {
-        const items = data.schedule.schedule;
-        const scheduleText = items.map((item: any) => {
-          const start = new Date(item.start_time).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
-          const end = new Date(item.end_time).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
-          return `• ${item.task_title} (${start} – ${end})`;
-        }).join("\n");
-        reply.content = `${data.summary}\n\n${scheduleText}`;
+      // ✅ Handle schedule display
+      if (data?.data?.updated_schedule?.length > 0) {
+        const items = data.data.updated_schedule;
+        const scheduleText = items
+          .map((item: any) => {
+            const start = new Date(item.start_time).toLocaleTimeString("en-IN", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+            const end = new Date(item.end_time).toLocaleTimeString("en-IN", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+            return `• ${item.task_title} (${start} – ${end})`;
+          })
+          .join("\n");
+        reply.content = `${reply.content}\n\n${scheduleText}`;
+      }
 
-        // Create new tasks if intent is task creation
-        if (data?.intent === "create_task" || data?.intent === "add_task") {
-          for (const item of items) {
-            try {
-              await api.post("/tasks", {
-                title: item.task_title,
-                deadline: item.start_time,
-                estimated_duration_minutes: Math.round(
-                  (new Date(item.end_time).getTime() - new Date(item.start_time).getTime()) / 60000
-                ),
-                priority: "medium",
-              });
-            } catch {}
-          }
-        }
+      // ✅ Handle task creation intent
+      if (data?.intent === "create_task" || data?.intent === "add_task") {
+        try {
+          // Extract just the task title - remove common prefixes and duration
+          const taskTitle = trimmed
+            .replace(/^(add|create|make|schedule)\s+(a\s+)?(task\s*)?(:|-)?\s*/i, "")
+            .replace(/,?\s*\d+\s*(hour|hr|minute|min)s?.*/i, "")
+            .trim()
+            .slice(0, 160);
+
+          // Extract duration if mentioned
+          const durationMatch = trimmed.match(/(\d+)\s*(hour|hr)/i);
+          const minuteMatch = trimmed.match(/(\d+)\s*(minute|min)/i);
+          const duration = durationMatch
+            ? parseInt(durationMatch[1]) * 60
+            : minuteMatch
+            ? parseInt(minuteMatch[1])
+            : 30;
+
+          await api.post(
+            "/tasks",
+            {
+              title: taskTitle || trimmed.slice(0, 160),
+              estimated_duration_minutes: Math.min(Math.max(duration, 5), 1440),
+              priority: "medium",
+              status: "pending",
+            },
+            { headers: { Authorization: authHeader } },
+          );
+
+          reply.content = `${reply.content}\n\n✓ Task "${taskTitle}" added to your list.`;
+        } catch {}
       }
 
       setMessages((prev) => [...prev, reply]);
-    } catch {
+    } catch (err) {
+      console.error("NANI error:", err);
       setError("NANI is drifting just out of reach right now. Try again soon.");
     } finally {
       setIsThinking(false);

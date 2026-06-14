@@ -15,8 +15,7 @@ import NANIOrb from "@/components/dashboard/NANIOrb";
 import FocusBeacon from "@/components/dashboard/Pomodoro";
 import { useNaniSidebar } from "@/components/providers/NaniProvider";
 import { useTasks } from "@/contexts/TaskContext";
-import { useAuth } from "@/contexts/AuthContext"; // ✅ added
-import { mockSchedule } from "@/lib/mock-data";
+import { useAuth } from "@/contexts/AuthContext";
 
 function isSameDay(a: Date, b: Date) {
   return (
@@ -28,8 +27,8 @@ function isSameDay(a: Date, b: Date) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { tasks, loading } = useTasks();
-  const { session, loading: authLoading } = useAuth(); // ✅ added
+  const { tasks, loading, completeTask } = useTasks();
+  const { session, loading: authLoading } = useAuth();
   const [isExpanding, setIsExpanding] = useState(false);
   const [greeting, setGreeting] = useState("Hello");
   const [userName, setUserName] = useState("there");
@@ -46,42 +45,39 @@ export default function DashboardPage() {
   useEffect(() => {
     const raw = localStorage.getItem("nagare_onboarding");
     if (raw) {
-      const data = JSON.parse(raw);
-      console.log("🌊 Onboarding Answers:", data.answers);
-      console.log("📅 Completed At:", data.completedAt);
+      try { const data = JSON.parse(raw); console.log("🌊 Onboarding:", data.answers); } catch {}
     }
   }, []);
 
-  // ✅ Fixed: wait for auth session before calling /auth/me
   useEffect(() => {
     if (authLoading || !session?.access_token) return;
-
-    api
-      .get("/auth/me")
-      .then(({ data }) => {
-        const email: string = data?.email ?? "";
-        const name = data?.name || email.split("@")[0];
-        setUserName(name);
-      })
-      .catch(() => {});
+    api.get("/auth/me").then(({ data }) => {
+      const email: string = data?.email ?? "";
+      setUserName(data?.name || email.split("@")[0]);
+    }).catch(() => {});
   }, [authLoading, session]);
 
   const now = new Date();
+
+  // Only show non-resolved tasks everywhere
   const pendingTasks = tasks.filter((t) => t.state !== "resolved");
   const todaysTasks = pendingTasks.filter((t) =>
-    t.deadline ? isSameDay(new Date(t.deadline), now) : false,
+    t.deadline ? isSameDay(new Date(t.deadline), now) : false
   );
   const upcomingDeadlines = pendingTasks
     .filter((t) => t.deadline && !isSameDay(new Date(t.deadline), now))
-    .sort(
-      (a, b) =>
-        new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime(),
-    );
+    .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime());
 
   const snapshot = {
     total: tasks.length,
     pending: pendingTasks.length,
     completed: tasks.filter((t) => t.state === "resolved").length,
+  };
+
+  // Just call completeTask — it optimistically sets state:"resolved" immediately
+  // which removes the task from pendingTasks filter above. No refresh() needed.
+  const handleCompleteTask = async (taskId: string) => {
+    await completeTask(taskId);
   };
 
   const handleScheduleClick = () => {
@@ -100,43 +96,22 @@ export default function DashboardPage() {
             {greeting}, {userName}.
           </h1>
           <p className="mt-1 text-sm text-ink-soft">
-            {loading
-              ? "Gathering your thoughts…"
-              : "Your thoughts are gathering."}
+            {loading ? "Gathering your thoughts…" : "Your thoughts are gathering."}
           </p>
         </div>
 
-        {/* Schedule + Focus buttons */}
         <div className="flex items-start gap-3">
           <FocusBeacon />
 
-          <div className="flex flex-col items-center gap-1.5">
-            <motion.button
-              type="button"
-              onClick={handleScheduleClick}
-              aria-label="Schedule a new thought"
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-lavender via-cloud to-sky shadow-glow-lav"
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.95 }}
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Plus size={22} className="text-ink" />
-            </motion.button>
-            <span className="text-xs text-ink-soft">Schedule</span>
-          </div>
         </div>
       </header>
 
       <section className="relative z-10 mx-auto mt-10 grid max-w-6xl gap-6 lg:grid-cols-[300px_1fr_300px] lg:items-center">
         <div className="order-2 lg:order-1">
-          <TodaysFlow
-            todaysTasks={todaysTasks}
-            upcomingDeadlines={upcomingDeadlines}
-          />
+          <TodaysFlow todaysTasks={todaysTasks} upcomingDeadlines={upcomingDeadlines} />
         </div>
         <div className="order-1 lg:order-2">
-          <MemoryJar tasks={tasks} onCompleteTask={() => {}} />
+          <MemoryJar tasks={tasks} onCompleteTask={handleCompleteTask} />
         </div>
         <div className="order-3 lg:order-3">
           <MindSnapshot data={snapshot} />
@@ -144,7 +119,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="relative z-10 mx-auto mt-12 max-w-6xl">
-        <SchedulePreview initialFlow={mockSchedule} />
+        <SchedulePreview />
       </section>
 
       <NANIOrb onClick={openNani} isOpen={isNaniOpen} />

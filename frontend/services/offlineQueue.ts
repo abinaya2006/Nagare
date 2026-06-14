@@ -1,24 +1,47 @@
+// services/offlineQueue.ts
+// Add this to your existing offlineQueue - it filters out stale PATCH /complete entries
+// that were queued when CORS was failing
+
 import localforage from "localforage";
 import { api } from "@/services/api";
 
-export type QueuedAction = { method: "post" | "put" | "delete"; url: string; data?: unknown; createdAt: string };
-const key = "pulse-plan-offline-queue";
+interface QueuedRequest {
+  method: "get" | "post" | "put" | "patch" | "delete";
+  url: string;
+  data?: unknown;
+}
 
-export async function enqueue(action: Omit<QueuedAction, "createdAt">) {
-  const existing = (await localforage.getItem<QueuedAction[]>(key)) ?? [];
-  await localforage.setItem(key, [...existing, { ...action, createdAt: new Date().toISOString() }]);
+const QUEUE_KEY = "nagare-offline-queue";
+
+export async function enqueue(request: QueuedRequest) {
+  const queue = (await localforage.getItem<QueuedRequest[]>(QUEUE_KEY)) ?? [];
+  queue.push(request);
+  await localforage.setItem(QUEUE_KEY, queue);
 }
 
 export async function flushQueue() {
-  const queued = (await localforage.getItem<QueuedAction[]>(key)) ?? [];
-  const remaining: QueuedAction[] = [];
-  for (const action of queued) {
+  const queue = (await localforage.getItem<QueuedRequest[]>(QUEUE_KEY)) ?? [];
+  if (queue.length === 0) return;
+
+  // Filter out any stale PATCH /complete requests — these fail due to CORS
+  // and will never succeed without a backend change
+  const replayable = queue.filter(
+    (r) => !(r.method === "patch" && r.url.includes("/complete"))
+  );
+
+  const remaining: QueuedRequest[] = [];
+
+  for (const request of replayable) {
     try {
-      await api.request({ method: action.method, url: action.url, data: action.data });
+      await (api as any)[request.method](request.url, request.data);
     } catch {
-      remaining.push(action);
+      remaining.push(request);
     }
   }
-  await localforage.setItem(key, remaining);
+
+  await localforage.setItem(QUEUE_KEY, remaining);
 }
 
+export async function clearQueue() {
+  await localforage.removeItem(QUEUE_KEY);
+}
