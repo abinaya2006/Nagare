@@ -27,7 +27,7 @@ class WorkPreferences(BaseModel):
     max_daily_tasks: int = Field(default=6, ge=1, le=20)
     split_task_threshold_minutes: int = Field(default=120, ge=30, le=480)
     allow_weekends: bool = False
-    timezone: str = "UTC"
+    timezone: str = "Asia/Kolkata"
 
     @model_validator(mode="after")
     def validate_workday(self):
@@ -54,6 +54,7 @@ class UnscheduledTask(BaseModel):
 class ScheduleOutput(BaseModel):
     schedule: list[ScheduleItem]
     unscheduled_tasks: list[UnscheduledTask] = Field(default_factory=list)
+    justification: str | None = None  
 
 
 class ScheduleGenerateRequest(BaseModel):
