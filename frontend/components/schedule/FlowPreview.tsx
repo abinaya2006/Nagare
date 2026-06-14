@@ -45,7 +45,7 @@ export default function FlowPreview({
       </div>
       <div className="flex flex-wrap gap-2">
         <AnimatePresence mode="popLayout">
-          {slots.map((slot, i) => (
+          {(slots ?? []).map((slot, i) => (
             <motion.div
               key={slot.time + slot.task}
               initial={{ opacity: 0, scale: 0.85, y: 6 }}

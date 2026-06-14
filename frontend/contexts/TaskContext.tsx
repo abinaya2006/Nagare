@@ -4,7 +4,7 @@ import localforage from "localforage";
 import { api, setAuthToken } from "@/services/api";
 import { enqueue, flushQueue } from "@/services/offlineQueue";
 import { useAuth } from "@/contexts/AuthContext";
-import type { Task, TaskInput } from "@/types";
+import type { Task, TaskInput, TaskPriority, TaskState, TaskSegment } from "@/types";
 
 type TaskContextValue = {
   tasks: Task[];
@@ -20,13 +20,124 @@ type TaskContextValue = {
 const TaskContext = createContext<TaskContextValue | null>(null);
 const cacheKey = "nagare-tasks";
 
+// ─── Backend → Frontend ────────────────────────────────────────────────────
+function mapBackendTask(t: any): Task {
+  const deadline = t.deadline ? new Date(t.deadline) : null;
+  const hour = deadline ? deadline.getHours() : 12;
+  const segment: TaskSegment =
+    hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+
+  // backend: pending | scheduled | completed  →  frontend: waiting | flowing | resolved
+  const statusMap: Record<string, TaskState> = {
+    pending: "waiting",
+    scheduled: "flowing",
+    completed: "resolved",
+  };
+
+  const priorityMap: Record<string, TaskPriority> = {
+    high: "high",
+    medium: "medium",
+    low: "low",
+    critical: "critical",
+  };
+
+  // derive "overdue" from deadline on the frontend side
+  const mappedState: TaskState = statusMap[t.status] ?? "waiting";
+  const isOverdue =
+    mappedState === "waiting" &&
+    deadline !== null &&
+    deadline < new Date();
+  const state: TaskState = isOverdue ? "overdue" : mappedState;
+
+  // parse "30m" / "1h 30m" back from stored minutes
+  const mins: number = t.estimated_duration_minutes ?? 30;
+
+  return {
+    id: t.id,
+    title: t.title,
+    priority: priorityMap[t.priority] ?? "medium",
+    state,
+    category: t.category ?? "Study",
+    constellation: t.constellation ?? "The Scholar",
+    deadline: t.deadline ?? new Date().toISOString(),
+    duration: mins >= 60
+      ? `${Math.floor(mins / 60)}h${mins % 60 > 0 ? ` ${mins % 60}m` : ""}`
+      : `${mins}m`,
+    energy: t.energy ?? "Medium",
+    notes: t.description ?? "",
+    segment,
+    createdAt: t.created_at ?? new Date().toISOString(),
+  };
+}
+
+// ─── Frontend → Backend ────────────────────────────────────────────────────
+// Converts a TaskInput (frontend shape) to the backend TaskCreate/TaskUpdate shape.
+function toBackendCreate(task: TaskInput): Record<string, unknown> {
+  // parse duration string "30m" | "1h" | "1h 30m" → minutes
+  let estimated_duration_minutes = 30;
+  if (task.duration) {
+    const hMatch = task.duration.match(/(\d+)h/);
+    const mMatch = task.duration.match(/(\d+)m/);
+    estimated_duration_minutes =
+      (hMatch ? parseInt(hMatch[1]) * 60 : 0) +
+      (mMatch ? parseInt(mMatch[1]) : 0) || 30;
+  }
+
+  // frontend state → backend status (only pending/scheduled/completed allowed)
+  const stateToStatus: Record<string, string> = {
+    waiting: "pending",
+    flowing: "scheduled",
+    resolved: "completed",
+    overdue: "pending", // overdue is a derived state; store as pending
+  };
+
+  return {
+    title: task.title,
+    description: task.notes ?? "",
+    deadline: task.deadline ?? null,
+    estimated_duration_minutes,
+    priority: task.priority ?? "medium",
+    status: stateToStatus[task.state ?? "waiting"] ?? "pending",
+    is_routine: false,
+  };
+}
+
+function toBackendUpdate(task: Partial<TaskInput>): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+
+  if (task.title !== undefined) patch.title = task.title;
+  if (task.notes !== undefined) patch.description = task.notes;
+  if (task.deadline !== undefined) patch.deadline = task.deadline;
+  if (task.priority !== undefined) patch.priority = task.priority;
+
+  if (task.state !== undefined) {
+    const stateToStatus: Record<string, string> = {
+      waiting: "pending",
+      flowing: "scheduled",
+      resolved: "completed",
+      overdue: "pending",
+    };
+    patch.status = stateToStatus[task.state] ?? "pending";
+  }
+
+  if (task.duration !== undefined) {
+    const hMatch = task.duration.match(/(\d+)h/);
+    const mMatch = task.duration.match(/(\d+)m/);
+    patch.estimated_duration_minutes =
+      (hMatch ? parseInt(hMatch[1]) * 60 : 0) +
+      (mMatch ? parseInt(mMatch[1]) : 0) || 30;
+  }
+
+  return patch;
+}
+
+// ─── Provider ──────────────────────────────────────────────────────────────
 export function TaskProvider({ children }: { children: React.ReactNode }) {
-  const { user, session } = useAuth(); // <-- grab session for token
+  const { user, session } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync auth token whenever session changes
   useEffect(() => {
     setAuthToken(session?.access_token);
   }, [session]);
@@ -36,10 +147,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       await flushQueue();
-      // Backend returns { tasks: Task[] }
-      const response = await api.get<{ tasks: Task[] }>("/tasks");
-      setTasks(response.data.tasks);
-      await localforage.setItem(cacheKey, response.data.tasks);
+      const response = await api.get<{ tasks: any[] }>("/tasks");
+      const mapped = response.data.tasks.map(mapBackendTask);
+      setTasks(mapped);
+      await localforage.setItem(cacheKey, mapped);
       setError(null);
     } catch {
       setTasks((await localforage.getItem<Task[]>(cacheKey)) ?? []);
@@ -62,42 +173,42 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     refresh,
 
     async createTask(task) {
+      const payload = toBackendCreate(task);
       try {
-        // Backend returns { message, task: Task }
-        const response = await api.post<{ message: string; task: Task }>("/tasks", task);
-        setTasks((prev) => [response.data.task, ...prev]);
+        const response = await api.post<{ message: string; task: any }>("/tasks", payload);
+        setTasks((prev) => [mapBackendTask(response.data.task), ...prev]);
       } catch {
-        await enqueue({ method: "post", url: "/tasks", data: task });
+        await enqueue({ method: "post", url: "/tasks", data: payload });
         setError("Task queued and will sync when online.");
       }
     },
 
     async updateTask(id, task) {
-      // Optimistic update — backend only returns { message }
+      // optimistic update (keep frontend shape)
       setTasks((prev) =>
         prev.map((item) => item.id === id ? { ...item, ...task } as Task : item)
       );
+      const patch = toBackendUpdate(task);
       try {
-        await api.put(`/tasks/${id}`, task);
+        await api.put(`/tasks/${id}`, patch);
       } catch {
-        await enqueue({ method: "put", url: `/tasks/${id}`, data: task });
+        await enqueue({ method: "put", url: `/tasks/${id}`, data: patch });
       }
     },
 
     async completeTask(id) {
-      // Optimistic update
       setTasks((prev) =>
         prev.map((item) => item.id === id ? { ...item, state: "resolved" } as Task : item)
       );
       try {
         await api.patch(`/tasks/${id}/complete`);
       } catch {
-        await enqueue({ method: "put", url: `/tasks/${id}`, data: { state: "resolved" } });
+        await enqueue({ method: "patch", url: `/tasks/${id}/complete`, data: {} });
       }
     },
 
     async deleteTask(id) {
-      setTasks((prev) => prev.filter((task) => task.id !== id));
+      setTasks((prev) => prev.filter((t) => t.id !== id));
       try {
         await api.delete(`/tasks/${id}`);
       } catch {

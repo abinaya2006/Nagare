@@ -14,6 +14,11 @@ api.interceptors.response.use(
   }
 );
 
+api.interceptors.request.use((config) => {
+  console.log('🔑 Sending token:', config.headers?.Authorization?.toString().substring(0, 40) ?? 'NONE');
+  return config;
+});
+
 export function setAuthToken(token?: string) {
   if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`;
   else delete api.defaults.headers.common.Authorization;
