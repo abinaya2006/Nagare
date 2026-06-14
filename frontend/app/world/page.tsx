@@ -7,8 +7,10 @@ export default function WorldPage() {
   const { open: openNani } = useNaniSidebar();
   const { tasks } = useTasks();
 
-  // Count from the already-loaded task context — no extra API call needed
-  const completedCount = tasks.filter((t) => t.state === "resolved").length;
+  // ✅ match actual task status field and value
+  const completedCount = tasks.filter(
+    (t) => t.status === "completed" || (t as any).state === "resolved"
+  ).length;
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden p-4 sm:p-6">
@@ -22,7 +24,7 @@ export default function WorldPage() {
       </header>
       <div className="flex-1 min-h-0">
         <ConstellationWorld
-          initialCompletedTasks={completedCount}
+          completedTasks={completedCount} // ✅ correct prop name
           onOpenNaniChat={openNani}
         />
       </div>
