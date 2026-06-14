@@ -52,7 +52,8 @@ export default function SchedulePage() {
   const [today, setToday] = useState("");
 
   const { tasks, loading: tasksLoading, createTask, updateTask, deleteTask, completeTask, refresh } = useTasks();
-  const { schedule, flowBalance, naniInsight, todayFlow, generateFlow, reschedule, isLoading: scheduleLoading } = useSchedule();
+  // ↓ destructure scheduleItems
+  const { schedule, scheduleItems, flowBalance, naniInsight, todayFlow, generateFlow, reschedule, isLoading: scheduleLoading } = useSchedule();
   const { processNaturalLanguage, isProcessing: naniProcessing } = useNANIPlanner();
 
   useEffect(() => {
@@ -125,7 +126,7 @@ export default function SchedulePage() {
 
   const handleTaskUpdate = useCallback(async (id: string, data: Partial<Task>) => {
     await updateTask(id, data);
-    await refresh();
+    // await refresh();
   }, [updateTask, refresh]);
 
   const viewVariants = {
@@ -165,7 +166,7 @@ export default function SchedulePage() {
           )}
         </header>
 
-        {/* Toolbar — just view switcher, no generate button */}
+        {/* Toolbar */}
         <div className="toolbar">
           <nav className="view-switcher" aria-label="View modes">
             {VIEW_MODES.map((mode) => (
@@ -191,8 +192,13 @@ export default function SchedulePage() {
           </nav>
         </div>
 
+        {/* ↓ fixed: was flow={todayFlow}, now slots={todayFlow} */}
         {todayFlow && todayFlow.length > 0 && (
-          <FlowPreview flow={todayFlow} isLoading={scheduleLoading} onRegenerate={handleGenerateFlow} />
+          <FlowPreview
+            slots={todayFlow}
+            isLoading={scheduleLoading}
+            onRegenerate={handleGenerateFlow}
+          />
         )}
 
         <TaskFilters options={FILTER_OPTIONS} activeFilter={activeFilter} onFilterChange={setActiveFilter} />
@@ -210,8 +216,10 @@ export default function SchedulePage() {
             )}
             {viewMode === "calendar" && (
               <motion.div key="calendar" variants={viewVariants} initial="enter" animate="center" exit="exit" className="view-pane">
+                {/* ↓ added scheduleItems prop */}
                 <CalendarView
                   tasks={filteredTasks}
+                  scheduleItems={scheduleItems}
                   isLoading={tasksLoading}
                   onTaskSelect={handleTaskSelect}
                   onTaskUpdate={handleTaskUpdate}
@@ -221,7 +229,6 @@ export default function SchedulePage() {
           </AnimatePresence>
         </main>
 
-        {/* NANI Composer with regenerate button */}
         <NANIComposer
           isProcessing={naniProcessing}
           onSubmit={handleNANISubmit}

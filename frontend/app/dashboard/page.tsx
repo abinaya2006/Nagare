@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
-
+import { api } from "@/services/api";
 import AmbientBackground from "@/components/dashboard/AmbientBackground";
 import FloatingParticles from "@/components/dashboard/FloatingParticles";
 import MemoryJar from "@/components/dashboard/MemoryJar";
@@ -18,7 +18,8 @@ import { useTasks } from "@/contexts/TaskContext";
 
 import { mockSchedule } from "@/lib/mock-data";
 
-const USER_NAME = "Abi";
+
+
 
 function isSameDay(a: Date, b: Date) {
   return (
@@ -33,6 +34,8 @@ export default function DashboardPage() {
   const { tasks, loading } = useTasks();
   const [isExpanding, setIsExpanding] = useState(false);
   const [greeting, setGreeting] = useState("Hello");
+  const [userName, setUserName] = useState("there");
+
   const { isOpen: isNaniOpen, open: openNani } = useNaniSidebar();
 
   useEffect(() => {
@@ -49,6 +52,14 @@ export default function DashboardPage() {
       console.log("🌊 Onboarding Answers:", data.answers);
       console.log("📅 Completed At:", data.completedAt);
     }
+  }, []);
+
+  useEffect(() => {
+    api.get("/auth/me").then(({ data }) => {
+      const email: string = data?.email ?? "";
+      const name = data?.name || email.split("@")[0];
+      setUserName(name);
+    }).catch(() => {});
   }, []);
 
   const now = new Date();
@@ -79,7 +90,7 @@ export default function DashboardPage() {
       <header className="relative z-10 mx-auto flex max-w-6xl items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-medium italic text-ink sm:text-4xl">
-            {greeting}, {USER_NAME}.
+            {greeting}, {userName}.
           </h1>
           <p className="mt-1 text-sm text-ink-soft">
             {loading ? "Gathering your thoughts…" : "Your thoughts are gathering."}
