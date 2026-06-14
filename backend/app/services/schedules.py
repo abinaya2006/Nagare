@@ -1,3 +1,4 @@
+import os
 import uuid
 import httpx
 from fastapi import HTTPException
@@ -101,10 +102,8 @@ class ScheduleService:
 
         try:
             async with httpx.AsyncClient(timeout=90.0) as client:
-                response = await client.post(
-                    "http://127.0.0.1:8000/api/ai/generate-schedule",
-                    json=ai_payload
-                )
+                ai_url = os.getenv("AI_SERVICE_URL", "http://127.0.0.1:8000")
+                response = await client.post(f"{ai_url}/api/ai/generate-schedule", json=ai_payload
                 response.raise_for_status()
                 ai_data = response.json()
         except httpx.HTTPStatusError as e:
