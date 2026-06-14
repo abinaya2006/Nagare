@@ -14,7 +14,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className={`relative flex min-h-screen flex-col sm:flex-row ${!isAuthPage ? "nagare-shell" : ""}`}>
+    // Use bg-base + text-ink from CSS vars — flips light/dark automatically
+    <div className={`relative flex min-h-screen flex-col sm:flex-row bg-base text-ink ${!isAuthPage ? "nagare-shell" : ""}`}>
       <AmbientBackground />
       <FloatingParticles count={16} />
       {!isAuthPage && <Sidebar />}

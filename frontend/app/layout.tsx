@@ -4,7 +4,8 @@ import "@/styles/globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { NaniProvider } from "@/components/providers/NaniProvider";
-import { TaskProvider } from "@/contexts/TaskContext";  // ← add
+import { TaskProvider } from "@/contexts/TaskContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import AppShell from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
@@ -14,8 +15,27 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/*
+          Flash-prevention script — runs before React hydrates.
+          Reads saved theme and applies .dark to <html> immediately
+          so there's no white flash on dark mode page load.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('nagare_theme');
+                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  var theme = saved === 'dark' || saved === 'light' ? saved : (prefersDark ? 'dark' : 'light');
+                  if (theme === 'dark') document.documentElement.classList.add('dark');
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#E8E1FF" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -29,15 +49,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body suppressHydrationWarning>
-        <AuthProvider>
-          <AppProvider>
-            <NaniProvider>
-              <TaskProvider>      {/* ← wrap here, inside AuthProvider so user is available */}
-                <AppShell>{children}</AppShell>
-              </TaskProvider>
-            </NaniProvider>
-          </AppProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <AppProvider>
+              <NaniProvider>
+                <TaskProvider>
+                  <AppShell>{children}</AppShell>
+                </TaskProvider>
+              </NaniProvider>
+            </AppProvider>
+          </AuthProvider>
+        </ThemeProvider>
         <PWARegister />
       </body>
     </html>

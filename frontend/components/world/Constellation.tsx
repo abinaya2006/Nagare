@@ -9,24 +9,20 @@ interface ConstellationProps {
   onSelect: (progress: ConstellationProgress) => void;
 }
 
+// Glow colors tuned for a dark sky — soft, not harsh
 const GLOW_BY_MEANING: Record<string, string> = {
-  Creativity: "#E8E1FF",
-  Execution: "#FFE8D6",
-  Learning: "#AFC8FF",
-  Curiosity: "#DDEEFF",
-  Consistency: "#FFF4C7",
-  Planning: "#AFC8FF",
-  Transformation: "#FFE8D6",
+  Creativity:     "#c4b5fd", // soft violet
+  Execution:      "#fcd34d", // warm gold
+  Learning:       "#93c5fd", // sky blue
+  Curiosity:      "#a5f3fc", // aqua
+  Consistency:    "#fde68a", // pale gold
+  Planning:       "#bfdbfe", // ice blue
+  Transformation: "#f9a8d4", // rose
 };
 
-/**
- * A cluster of stars that, once enough Flow Energy has gathered, connect
- * into a named constellation with its own quiet glow and a label inviting
- * the user to read its lore.
- */
 export default function Constellation({ progress, onSelect }: ConstellationProps) {
   const { constellation, revealedStarCount, revealedConnections, unlocked } = progress;
-  const glowColor = GLOW_BY_MEANING[constellation.meaning] ?? "#FFF4C7";
+  const glowColor = GLOW_BY_MEANING[constellation.meaning] ?? "#fde68a";
 
   if (revealedStarCount === 0) return null;
 
@@ -37,7 +33,7 @@ export default function Constellation({ progress, onSelect }: ConstellationProps
   const maxX = Math.max(...dxs) + pad;
   const minY = Math.min(...dys) - pad;
   const maxY = Math.max(...dys) + pad;
-  const svgWidth = maxX - minX;
+  const svgWidth  = maxX - minX;
   const svgHeight = maxY - minY;
 
   return (
@@ -46,16 +42,16 @@ export default function Constellation({ progress, onSelect }: ConstellationProps
       {unlocked && (
         <motion.div
           aria-hidden="true"
-          className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full blur-[80px]"
+          className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full blur-[90px]"
           style={{
             left: constellation.center.x,
-            top: constellation.center.y,
-            width: 360,
-            height: 360,
-            backgroundColor: `${glowColor}55`,
+            top:  constellation.center.y,
+            width: 320,
+            height: 320,
+            backgroundColor: `${glowColor}18`,
           }}
-          animate={{ opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ opacity: [0.4, 0.75, 0.4] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
         />
       )}
 
@@ -65,9 +61,9 @@ export default function Constellation({ progress, onSelect }: ConstellationProps
           aria-hidden="true"
           className="absolute"
           style={{
-            left: constellation.center.x + minX,
-            top: constellation.center.y + minY,
-            width: svgWidth,
+            left:   constellation.center.x + minX,
+            top:    constellation.center.y + minY,
+            width:  svgWidth,
             height: svgHeight,
             overflow: "visible",
           }}
@@ -75,18 +71,17 @@ export default function Constellation({ progress, onSelect }: ConstellationProps
           {revealedConnections.map(([a, b], i) => {
             const starA = constellation.stars[a];
             const starB = constellation.stars[b];
+            if (!starA || !starB) return null;
             return (
               <motion.line
                 key={`${a}-${b}`}
-                x1={starA.dx - minX}
-                y1={starA.dy - minY}
-                x2={starB.dx - minX}
-                y2={starB.dy - minY}
-                stroke="#FFFFFF"
-                strokeOpacity={0.55}
-                strokeWidth={1.5}
+                x1={starA.dx - minX} y1={starA.dy - minY}
+                x2={starB.dx - minX} y2={starB.dy - minY}
+                stroke={glowColor}
+                strokeOpacity={0.35}
+                strokeWidth={1}
                 initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 0.55 }}
+                animate={{ pathLength: 1, opacity: 0.35 }}
                 transition={{ duration: 1.4, delay: i * 0.15, ease: "easeInOut" }}
               />
             );
@@ -107,16 +102,18 @@ export default function Constellation({ progress, onSelect }: ConstellationProps
         />
       ))}
 
-      {/* Label */}
+      {/* Name label — appears when unlocked */}
       {unlocked && (
         <motion.button
           type="button"
           onClick={() => onSelect(progress)}
-          className="absolute -translate-x-1/2 rounded-full px-3 py-1 font-display text-xs italic text-ink/80 backdrop-blur-sm transition hover:text-ink"
+          className="absolute -translate-x-1/2 rounded-full px-3 py-1 font-display text-xs italic backdrop-blur-sm transition"
           style={{
             left: constellation.center.x,
-            top: constellation.center.y - 100,
-            backgroundColor: "rgba(255,255,255,0.35)",
+            top:  constellation.center.y - 110,
+            background: "rgba(10,14,40,0.55)",
+            border: `1px solid ${glowColor}30`,
+            color: glowColor,
           }}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
