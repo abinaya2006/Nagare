@@ -1,14 +1,20 @@
-from pydantic import BaseModel, Field
-from app.schemas.schedules import ScheduleOutput, WorkPreferences
-from typing import Any
-
+from pydantic import BaseModel
+from typing import Any, Dict, List
 
 class ORDARequest(BaseModel):
-    message: str = Field(min_length=1, max_length=1000)
-    preferences: WorkPreferences = WorkPreferences()
-
+    message: str
 
 class OrdaResponse(BaseModel):
     intent: str
-    summary: str
-    schedule: ScheduleOutput | None = None
+    response: str
+    action_taken: bool
+    data: Dict[str, Any]
+
+class OrdaHistoryItem(BaseModel):
+    id: str
+    message: str
+    response: str
+    timestamp: str
+
+class OrdaHistoryResponse(BaseModel):
+    history: List[OrdaHistoryItem]

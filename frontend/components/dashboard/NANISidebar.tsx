@@ -50,6 +50,7 @@ export default function NANISidebar({ isOpen, onClose }: NANISidebarProps) {
         transition={{ type: "spring", stiffness: 260, damping: 30 }}
         className="glass-strong fixed inset-y-0 right-0 z-50 flex w-full flex-col sm:w-[420px]"
         style={{ pointerEvents: isOpen ? "auto" : "none" }}
+          onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/50 px-6 py-5">
