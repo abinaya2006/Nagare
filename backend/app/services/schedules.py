@@ -12,6 +12,7 @@ from app.schemas.schedules import (
     UnscheduledTask,
     WorkPreferences,
 )
+from app.services.preferences import PreferencesService
 from app.schemas.tasks import Priority, Task, TaskStatus
 from app.services.tasks import TaskService
 
@@ -28,18 +29,23 @@ SCHEDULE_HORIZON_DAYS = 30
 class ScheduleService:
     def __init__(self) -> None:
         self.tasks = TaskService()
+        self.preferences = PreferencesService()
         self.repo = ScheduleRepository()
 
     async def generate(self, user_id: str, payload: ScheduleGenerateRequest) -> ScheduleOutput:
         tasks = self.tasks.list_tasks(user_id)
         preferences = self._preferences_from_generate_request(payload)
-        output = self._build_schedule(tasks, preferences, payload.available_hours)
+        preferences = self._apply_stored_preferences(user_id, preferences)
+        routine_tasks = self.preferences.list_routine_tasks(user_id, active_only=True)
+        output = self._build_schedule(tasks, preferences, payload.available_hours, routine_blocks=routine_tasks)
         self.repo.replace_current(user_id, output, source="rules")
         return output
 
     async def generate_with_preferences(self, user_id: str, preferences: WorkPreferences) -> ScheduleOutput:
         tasks = self.tasks.list_tasks(user_id)
-        output = self._build_schedule(tasks, preferences, None)
+        preferences = self._apply_stored_preferences(user_id, preferences)
+        routine_tasks = self.preferences.list_routine_tasks(user_id, active_only=True)
+        output = self._build_schedule(tasks, preferences, None, routine_blocks=routine_tasks)
         self.repo.replace_current(user_id, output, source="rules")
         return output
 
@@ -52,13 +58,17 @@ class ScheduleService:
 
     async def reschedule(self, user_id: str, payload: ScheduleRescheduleRequest) -> ScheduleOutput:
         tasks = self.tasks.list_tasks(user_id)
-        output = self._build_schedule(tasks, WorkPreferences(), None, event=payload.event)
+        routine_tasks = self.preferences.list_routine_tasks(user_id, active_only=True)
+        preferences = self._apply_stored_preferences(user_id, WorkPreferences())
+        output = self._build_schedule(tasks, preferences, None, event=payload.event, routine_blocks=routine_tasks)
         self.repo.replace_current(user_id, output, source="reschedule")
         return output
 
     async def reschedule_with_preferences(self, user_id: str, preferences: WorkPreferences) -> ScheduleOutput:
         tasks = self.tasks.list_tasks(user_id)
-        output = self._build_schedule(tasks, preferences, None)
+        preferences = self._apply_stored_preferences(user_id, preferences)
+        routine_tasks = self.preferences.list_routine_tasks(user_id, active_only=True)
+        output = self._build_schedule(tasks, preferences, None, routine_blocks=routine_tasks)
         self.repo.replace_current(user_id, output, source="reschedule")
         return output
 
@@ -69,12 +79,19 @@ class ScheduleService:
             productivity_preference=payload.productivity_preference,
         )
 
+    def _apply_stored_preferences(self, user_id: str, preferences: WorkPreferences) -> WorkPreferences:
+        stored = self.preferences.get_user_preferences(user_id)
+        if stored and stored.task_count:
+            preferences.max_daily_tasks = stored.task_count
+        return preferences
+
     def _build_schedule(
         self,
         tasks: list[Task],
         preferences: WorkPreferences,
         available_hours: list[TimeBlock] | None,
         event=None,
+        routine_blocks=None,
     ) -> ScheduleOutput:
         tz = self._timezone(preferences.timezone)
 
@@ -106,7 +123,7 @@ class ScheduleService:
                 continue
 
             day_windows = self._day_windows(current_day, tz, preferences, available_hours, now)
-            reserved = self._reserved_blocks(current_day, tz, preferences, routine_tasks, event)
+            reserved = self._reserved_blocks(current_day, tz, preferences, routine_tasks, event, routine_blocks or [])
             slots = self._available_slots(day_windows, reserved)
             daily_task_count = 0
 
@@ -183,6 +200,7 @@ class ScheduleService:
         preferences: WorkPreferences,
         routine_tasks: list[Task],
         event,
+        routine_blocks,
     ) -> list[tuple[datetime, datetime]]:
         blocks = []
         if preferences.lunch:
@@ -191,6 +209,9 @@ class ScheduleService:
             blocks.append((self._combine(current_day, break_block.start, tz), self._combine(current_day, break_block.end, tz)))
         for task in routine_tasks:
             blocks.append((self._combine(current_day, task.fixed_start_time, tz), self._combine(current_day, task.fixed_end_time, tz)))
+        for routine in routine_blocks:
+            if self._routine_applies_to_day(routine.days, current_day):
+                blocks.append((self._combine(current_day, routine.start_time, tz), self._combine(current_day, routine.end_time, tz)))
         if event:
             event_start = self._as_timezone(event.start_time, tz)
             event_end = self._as_timezone(event.end_time, tz)
@@ -252,4 +273,15 @@ class ScheduleService:
 
     def _overlaps_any(self, start: datetime, end: datetime, items: list[ScheduleItem]) -> bool:
         return any(start < item.end_time and end > item.start_time for item in items)
+
+    def _routine_applies_to_day(self, days: str, current_day: date) -> bool:
+        if isinstance(days, list):
+            normalized = {str(part).strip().lower() for part in days if str(part).strip()}
+        else:
+            normalized = {part.strip().lower() for part in days.split(",") if part.strip()}
+        if not normalized or "daily" in normalized or "all" in normalized:
+            return True
+        weekday_name = current_day.strftime("%A").lower()
+        weekday_short = current_day.strftime("%a").lower()
+        return weekday_name in normalized or weekday_short in normalized
 
