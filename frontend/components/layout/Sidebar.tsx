@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Home, Sparkles, CalendarDays, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import FloatingParticles from "@/components/dashboard/FloatingParticles";
 
 const NAV_ITEMS = [
@@ -13,6 +14,42 @@ const NAV_ITEMS = [
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
+function ThemeToggle({ compact }: { compact?: boolean }) {
+  const { theme, toggle } = useTheme();
+  const isDark = theme === "dark";
+
+  return (
+    <motion.button
+      type="button"
+      onClick={toggle}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.93 }}
+      className={`relative z-10 flex items-center gap-3 rounded-2xl px-3 py-2 transition sm:py-2.5 lg:px-4 ${
+        isDark
+          ? "text-ink-soft hover:text-ink hover:bg-white/10"
+          : "text-ink-soft hover:text-ink hover:bg-white/20"
+      }`}
+    >
+      <motion.span
+        key={theme}
+        initial={{ rotate: -20, opacity: 0 }}
+        animate={{ rotate: 0, opacity: 1 }}
+        transition={{ duration: 0.22 }}
+        className="flex h-[18px] w-[18px] items-center justify-center text-base leading-none"
+        aria-hidden="true"
+      >
+        {isDark ? "☽" : "○"}
+      </motion.span>
+      {!compact && (
+        <span className="hidden text-xs sm:block lg:text-sm">
+          {isDark ? "Light mode" : "Dark mode"}
+        </span>
+      )}
+    </motion.button>
+  );
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
@@ -21,7 +58,6 @@ export default function Sidebar() {
     try {
       await logout();
     } catch {
-      // force logout even if it throws
       window.location.href = "/login";
     }
   };
@@ -31,7 +67,7 @@ export default function Sidebar() {
       {/* ── Mobile bottom bar ── */}
       <nav
         aria-label="Main navigation"
-        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around gap-1 border-t border-white/20 bg-white/60 backdrop-blur-md px-2 py-2 sm:hidden"
+        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around gap-1 border-t border-white/20 bg-white/60 backdrop-blur-md dark:bg-[rgba(10,8,35,0.75)] dark:border-white/8 px-2 py-2 sm:hidden"
       >
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
@@ -42,7 +78,7 @@ export default function Sidebar() {
               href={item.href}
               aria-current={isActive ? "page" : undefined}
               className={`flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 transition ${
-                isActive ? "text-ink bg-white/60 shadow-glow-lav" : "text-ink-soft"
+                isActive ? "text-ink bg-white/60 dark:bg-white/10 shadow-glow-lav" : "text-ink-soft"
               }`}
             >
               <Icon size={20} aria-hidden="true" />
@@ -50,6 +86,16 @@ export default function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Theme toggle — mobile */}
+        <button
+          type="button"
+          onClick={() => {}}
+          className="flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 text-ink-soft transition"
+        >
+          <ThemeToggle compact />
+        </button>
+
         <button
           type="button"
           onClick={handleLogout}
@@ -87,8 +133,8 @@ export default function Sidebar() {
                 aria-current={isActive ? "page" : undefined}
                 className={`group relative flex flex-col items-center gap-1 rounded-2xl px-3 py-2 transition sm:flex-row sm:justify-start sm:gap-3 sm:py-2.5 lg:px-4 ${
                   isActive
-                    ? "bg-white/60 shadow-glow-lav text-ink"
-                    : "text-ink-soft hover:text-ink hover:bg-white/20"
+                    ? "bg-white/60 dark:bg-white/10 shadow-glow-lav text-ink"
+                    : "text-ink-soft hover:text-ink hover:bg-white/20 dark:hover:bg-white/8"
                 }`}
               >
                 <Icon size={18} className="relative z-10" aria-hidden="true" />
@@ -107,17 +153,21 @@ export default function Sidebar() {
           })}
         </div>
 
-        {/* Logout */}
-        <motion.button
-          type="button"
-          onClick={handleLogout}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
-          className="relative z-10 mt-auto flex flex-col items-center gap-1 rounded-2xl px-3 py-2 text-ink-soft transition hover:text-coral hover:bg-white/20 sm:flex-row sm:justify-start sm:gap-3 sm:py-2.5 lg:px-4"
-        >
-          <LogOut size={18} aria-hidden="true" />
-          <span className="hidden text-xs sm:block lg:text-sm">Logout</span>
-        </motion.button>
+        {/* Bottom section — theme toggle + logout */}
+        <div className="relative z-10 mt-auto flex flex-col gap-1">
+          <ThemeToggle />
+
+          <motion.button
+            type="button"
+            onClick={handleLogout}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            className="flex flex-col items-center gap-1 rounded-2xl px-3 py-2 text-ink-soft transition hover:text-coral hover:bg-white/20 dark:hover:bg-white/8 sm:flex-row sm:justify-start sm:gap-3 sm:py-2.5 lg:px-4"
+          >
+            <LogOut size={18} aria-hidden="true" />
+            <span className="hidden text-xs sm:block lg:text-sm">Logout</span>
+          </motion.button>
+        </div>
       </nav>
     </>
   );
