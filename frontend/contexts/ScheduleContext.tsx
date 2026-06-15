@@ -12,7 +12,7 @@ type ScheduleContextValue = {
   reschedule: () => Promise<void>;
 };
 
-const emptySchedule: ScheduleOutput = { schedule: [] };
+const emptySchedule: ScheduleOutput = { blocks: [] };
 const ScheduleContext = createContext<ScheduleContextValue | null>(null);
 
 export function ScheduleProvider({ children }: { children: React.ReactNode }) {
@@ -23,7 +23,13 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   async function call(url: string) {
     setLoading(true);
     try {
-      const response = await api.post<ScheduleOutput>(url, { preferences: { workday_start: "09:00", workday_end: "17:00", productivity_period: "morning" } });
+      const response = await api.post<ScheduleOutput>(url, {
+        preferences: {
+          workday_start: "09:00",
+          workday_end: "17:00",
+          productivity_period: "morning",
+        },
+      });
       setSchedule(response.data);
       setError(null);
     } catch {
@@ -33,20 +39,27 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const value = useMemo<ScheduleContextValue>(() => ({
-    schedule,
-    loading,
-    error,
-    generate: () => call("/schedule/generate"),
-    reschedule: () => call("/schedule/reschedule")
-  }), [error, loading, schedule]);
+  const value = useMemo<ScheduleContextValue>(
+    () => ({
+      schedule,
+      loading,
+      error,
+      generate: () => call("/schedule/generate"),
+      reschedule: () => call("/schedule/reschedule"),
+    }),
+    [error, loading, schedule],
+  );
 
-  return <ScheduleContext.Provider value={value}>{children}</ScheduleContext.Provider>;
+  return (
+    <ScheduleContext.Provider value={value}>
+      {children}
+    </ScheduleContext.Provider>
+  );
 }
 
 export function useSchedule() {
   const context = useContext(ScheduleContext);
-  if (!context) throw new Error("useSchedule must be used inside ScheduleProvider");
+  if (!context)
+    throw new Error("useSchedule must be used inside ScheduleProvider");
   return context;
 }
-

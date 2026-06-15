@@ -17,6 +17,12 @@ const PRIORITY_STYLES: Record<
   Task["priority"],
   { bg: string; ring: string; glow: string; text: string }
 > = {
+  critical: {
+    bg: "bg-red-500/80",
+    ring: "ring-red-500/60",
+    glow: "shadow-glow-coral",
+    text: "text-[#7a1a10]",
+  },
   high: {
     bg: "bg-coral/80",
     ring: "ring-coral-glow/60",
@@ -70,13 +76,13 @@ export default function TaskOrb({
       animate={{
         x: position.x,
         y: position.y,
-        scale: task.completed && settled ? 0.85 : 1,
-        opacity: task.completed && settled ? 0.5 : 1,
+        scale: task.state === "resolved" && settled ? 0.85 : 1,
+        opacity: task.state === "resolved" && settled ? 0.5 : 1,
       }}
       transition={
         isDragging.current
           ? { duration: 0 }
-          : task.completed
+          : task.state === "resolved"
             ? { duration: 1.2, ease: "easeInOut" }
             : { type: "spring", stiffness: 80, damping: 18 }
       }
@@ -84,12 +90,12 @@ export default function TaskOrb({
     >
       <motion.button
         type="button"
-        drag={!task.completed}
+        drag={task.state !== "resolved"}
         dragMomentum={false}
         dragElastic={0}
         whileDrag={{ scale: 1.15, zIndex: 30 }}
-        whileHover={!task.completed ? { scale: 1.08 } : {}}
-        whileTap={!task.completed ? { scale: 0.97 } : {}}
+        whileHover={task.state !== "resolved" ? { scale: 1.08 } : {}}
+        whileTap={task.state !== "resolved" ? { scale: 0.97 } : {}}
         onDragStart={() => {
           isDragging.current = true;
         }}
@@ -106,8 +112,8 @@ export default function TaskOrb({
         onClick={() => {
           if (!isDragging.current) onOpen(task);
         }}
-        aria-label={`${task.title}. ${task.completed ? "Completed" : `${task.priority} priority`}. Open details.`}
-        className={`relative flex items-center justify-center rounded-full ${palette.bg} ${palette.glow} ring-1 ${palette.ring} backdrop-blur-sm ${!task.completed ? "cursor-grab active:cursor-grabbing animate-drift" : "cursor-default"}`}
+        aria-label={`${task.title}. ${task.state === "resolved" ? "Completed" : `${task.priority} priority`}. Open details.`}
+        className={`... ${task.state !== "resolved" ? "cursor-grab active:cursor-grabbing animate-drift" : "cursor-default"}`}
         style={{
           width: size,
           height: size,
@@ -117,7 +123,7 @@ export default function TaskOrb({
         <span
           className={`pointer-events-none px-2 text-center font-display text-[11px] leading-tight ${palette.text}`}
         >
-          {task.completed
+          {task.state === "resolved"
             ? "✓"
             : task.title.length > 16
               ? `${task.title.slice(0, 14)}…`

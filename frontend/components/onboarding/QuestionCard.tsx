@@ -1,12 +1,17 @@
-'use client';
+"use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
-import type { Question, OnboardingAnswers, AnswerValue, TimelineAnswer } from '@/lib/onboardingData';
-import { EMOTIONS } from '@/lib/onboardingData';
-import SwipeOption from './SwipeOption';
-import MultiSelectCloud from './MultiSelectCloud';
-import TimelineBuilder from './TimelineBuilder';
-import GoalConstellation from './GoalConstellation';
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import type {
+  Question,
+  OnboardingAnswers,
+  AnswerValue,
+  TimelineAnswer,
+} from "@/lib/onboardingData";
+import { EMOTIONS } from "@/lib/onboardingData";
+import SwipeOption from "./SwipeOption";
+import MultiSelectCloud from "./MultiSelectCloud";
+import TimelineBuilder from "./TimelineBuilder";
+import GoalConstellation from "./GoalConstellation";
 
 interface QuestionCardProps {
   question: Question;
@@ -17,7 +22,7 @@ interface QuestionCardProps {
   direction: 1 | -1; // 1 = forward, -1 = backward
 }
 
-const cardVariants = {
+const cardVariants: Variants = {
   enter: (dir: number) => ({
     x: dir > 0 ? 60 : -60,
     opacity: 0,
@@ -27,7 +32,7 @@ const cardVariants = {
     x: 0,
     opacity: 1,
     scale: 1,
-    transition: { type: 'spring', stiffness: 320, damping: 30 },
+    transition: { type: "spring", stiffness: 320, damping: 30 },
   },
   exit: (dir: number) => ({
     x: dir > 0 ? -60 : 60,
@@ -38,24 +43,36 @@ const cardVariants = {
 };
 
 export default function QuestionCard({
-  question, questionNumber, totalQuestions, answer, onAnswer, direction,
+  question,
+  questionNumber,
+  totalQuestions,
+  answer,
+  onAnswer,
+  direction,
 }: QuestionCardProps) {
   const emotion = EMOTIONS[question.emotion];
 
-  function handleSingle(i: number) { onAnswer(question.id, i); }
+  function handleSingle(i: number) {
+    onAnswer(question.id, i);
+  }
 
   function handleMultiToggle(i: number) {
     const prev = (answer as number[] | null) ?? [];
     if (prev.includes(i)) {
-      onAnswer(question.id, prev.filter(x => x !== i));
+      onAnswer(
+        question.id,
+        prev.filter((x) => x !== i),
+      );
     } else {
-      const max = question.type === 'multi' ? question.max : undefined;
+      const max = question.type === "multi" ? question.max : undefined;
       if (max && prev.length >= max) return;
       onAnswer(question.id, [...prev, i]);
     }
   }
 
-  function handleTimeline(val: TimelineAnswer) { onAnswer(question.id, val); }
+  function handleTimeline(val: TimelineAnswer) {
+    onAnswer(question.id, val);
+  }
 
   return (
     <motion.div
@@ -72,10 +89,10 @@ export default function QuestionCard({
       <div
         className="relative w-full rounded-[28px] p-6 sm:p-8 overflow-hidden"
         style={{
-          background: 'rgba(255,255,255,0.72)',
-          backdropFilter: 'blur(24px) saturate(160%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-          border: '0.5px solid rgba(255,255,255,0.9)',
+          background: "rgba(255,255,255,0.72)",
+          backdropFilter: "blur(24px) saturate(160%)",
+          WebkitBackdropFilter: "blur(24px) saturate(160%)",
+          border: "0.5px solid rgba(255,255,255,0.9)",
           boxShadow: `
             0 8px 40px rgba(28,26,46,0.08),
             0 1px 3px rgba(28,26,46,0.05),
@@ -88,7 +105,7 @@ export default function QuestionCard({
           className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none"
           style={{
             background: `radial-gradient(circle, ${emotion.color}18 0%, transparent 65%)`,
-            transform: 'translate(30%, -30%)',
+            transform: "translate(30%, -30%)",
           }}
         />
 
@@ -98,7 +115,8 @@ export default function QuestionCard({
             className="text-xs font-semibold tracking-widest uppercase"
             style={{ color: emotion.color }}
           >
-            {String(questionNumber).padStart(2, '0')} / {String(totalQuestions).padStart(2, '0')}
+            {String(questionNumber).padStart(2, "0")} /{" "}
+            {String(totalQuestions).padStart(2, "0")}
           </span>
           <div
             className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium"
@@ -119,7 +137,10 @@ export default function QuestionCard({
         {/* Narrator hint */}
         <p
           className="text-sm italic mb-2 leading-relaxed"
-          style={{ color: '#A09DB8', fontFamily: "'DM Serif Display', Georgia, serif" }}
+          style={{
+            color: "#A09DB8",
+            fontFamily: "'DM Serif Display', Georgia, serif",
+          }}
         >
           {question.narrator}
         </p>
@@ -128,9 +149,9 @@ export default function QuestionCard({
         <h2
           className="text-xl sm:text-2xl font-medium leading-snug mb-6"
           style={{
-            color: '#1C1A2E',
+            color: "#1C1A2E",
             fontFamily: "'DM Serif Display', Georgia, serif",
-            letterSpacing: '-0.02em',
+            letterSpacing: "-0.02em",
           }}
         >
           {question.question}
@@ -138,17 +159,17 @@ export default function QuestionCard({
 
         {/* Interactive area */}
         <div className="relative z-10">
-          {question.type === 'single' && (
+          {question.type === "single" && (
             <SwipeOption
               options={question.options}
-              selected={typeof answer === 'number' ? answer : null}
+              selected={typeof answer === "number" ? answer : null}
               onSelect={handleSingle}
               accentColor={emotion.color}
               accentBg={emotion.bg}
             />
           )}
 
-          {question.type === 'multi' && (
+          {question.type === "multi" && (
             <MultiSelectCloud
               options={question.options}
               selected={Array.isArray(answer) ? (answer as number[]) : []}
@@ -161,7 +182,7 @@ export default function QuestionCard({
             />
           )}
 
-          {question.type === 'timeline' && (
+          {question.type === "timeline" && (
             <TimelineBuilder
               value={(answer as TimelineAnswer | null) ?? []}
               onChange={handleTimeline}
@@ -170,7 +191,7 @@ export default function QuestionCard({
             />
           )}
 
-          {question.type === 'goals' && (
+          {question.type === "goals" && (
             <GoalConstellation
               options={question.options}
               selected={Array.isArray(answer) ? (answer as number[]) : []}

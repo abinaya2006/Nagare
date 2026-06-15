@@ -8,9 +8,7 @@ export default function WorldPage() {
   const { tasks } = useTasks();
 
   // ✅ match actual task status field and value
-  const completedCount = tasks.filter(
-    (t) => t.status === "completed" || (t as any).state === "resolved"
-  ).length;
+  const completedCount = tasks.filter((t) => t.state === "resolved").length;
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden p-4 sm:p-6">

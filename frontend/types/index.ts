@@ -1,4 +1,17 @@
-// Task types
+export interface NANIProcessResult {
+  title: string;
+  priority: "low" | "medium" | "high" | "critical";
+  state: "waiting" | "active" | "done";
+  category: string;
+  constellation: string;
+  deadline: string;
+  duration: string;
+  energy: string;
+  segment: "morning" | "afternoon" | "evening" | "night";
+  notes: string;
+  insight: string;
+}
+// ─── Task ────────────────────────────────────────────────────────────────────
 export type TaskPriority = "critical" | "high" | "medium" | "low";
 export type TaskState = "waiting" | "flowing" | "resolved" | "overdue";
 export type TaskSegment = "morning" | "afternoon" | "evening";
@@ -7,7 +20,12 @@ export type TaskCategory =
   | "Projects"
   | "Creative Work"
   | "Exploration"
-  | "Habits";
+  | "Habits"
+  | "focus"
+  | "admin"
+  | "creative"
+  | "health"
+  | "social";
 export type Constellation =
   | "The Scholar"
   | "The Builder"
@@ -28,18 +46,33 @@ export interface Task {
   notes?: string;
   segment: TaskSegment;
   createdAt: string;
+  // legacy aliases — keeps old components compiling
+  completed?: boolean;
+  done?: boolean;
+  dueToday?: boolean;
+  status?: string;
+  estimatedDuration?: number;
+  description?: string;
+  estimated_duration_minutes?: number;
 }
 
-export type TaskInput = Partial<Task> & { title: string };
+export type CreateTaskInput = Partial<Task> & { title: string };
+export type TaskInput = CreateTaskInput;
 
-// Schedule
+// ─── Priority (legacy alias) ──────────────────────────────────────────────────
+export type Priority = TaskPriority;
+
+// ─── Schedule ────────────────────────────────────────────────────────────────
 export interface ScheduleBlock {
   id: string;
   time: string;
   label: string;
 }
+export interface ScheduleOutput {
+  blocks: ScheduleBlock[];
+}
 
-// NANI
+// ─── NANI ────────────────────────────────────────────────────────────────────
 export interface NaniMessage {
   id: string;
   role: "user" | "nani";
@@ -47,14 +80,14 @@ export interface NaniMessage {
   timestamp: string;
 }
 
-// Dashboard
+// ─── Dashboard ───────────────────────────────────────────────────────────────
 export interface MindSnapshotData {
   total: number;
   pending: number;
   completed: number;
 }
 
-// User
+// ─── User ────────────────────────────────────────────────────────────────────
 export interface User {
   id: string;
   name: string;

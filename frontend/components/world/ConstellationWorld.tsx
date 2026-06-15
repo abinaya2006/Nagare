@@ -11,7 +11,10 @@ import LoreModal from "./LoreModal";
 import DiscoveryReveal from "./DiscoveryReveal";
 import NANIGuide from "./NANIGuide";
 
-import { useConstellationProgress, type ConstellationProgress } from "@/hooks/useConstellationProgress";
+import {
+  useConstellationProgress,
+  type ConstellationProgress,
+} from "@/hooks/useConstellationProgress";
 import { useWorldUnlocks } from "@/hooks/useWorldUnlocks";
 import { REGIONS, WORLD_SIZE } from "@/lib/world-data";
 import type { AnimalShape } from "./ConstellationShapes";
@@ -30,8 +33,9 @@ export default function ConstellationWorld({
   animalShape = "bear",
   onOpenNaniChat,
 }: ConstellationWorldProps) {
-  const constellationProgress = useConstellationProgress(completedTasks, animalShape);
-  const { regions, activeMilestone, dismissMilestone } = useWorldUnlocks(completedTasks);
+  const constellationProgress = useConstellationProgress(completedTasks);
+  const { regions, activeMilestone, dismissMilestone } =
+    useWorldUnlocks(completedTasks);
 
   const [selected, setSelected] = useState<ConstellationProgress | null>(null);
   const [scale, setScale] = useState(0.55);
@@ -60,7 +64,9 @@ export default function ConstellationWorld({
   };
 
   const adjustZoom = (delta: number) =>
-    setScale((prev) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, +(prev + delta).toFixed(2))));
+    setScale((prev) =>
+      Math.min(MAX_SCALE, Math.max(MIN_SCALE, +(prev + delta).toFixed(2))),
+    );
 
   const recenter = () => {
     const el = containerRef.current;
@@ -122,10 +128,16 @@ export default function ConstellationWorld({
             backdropFilter: "blur(12px)",
           }}
         >
-          <p className="font-display text-sm italic" style={{ color: "rgba(220,230,255,0.9)" }}>
+          <p
+            className="font-display text-sm italic"
+            style={{ color: "rgba(220,230,255,0.9)" }}
+          >
             {completedTasks} star{completedTasks !== 1 ? "s" : ""} gathered
           </p>
-          <p className="mt-0.5 text-xs" style={{ color: "rgba(160,175,220,0.7)" }}>
+          <p
+            className="mt-0.5 text-xs"
+            style={{ color: "rgba(160,175,220,0.7)" }}
+          >
             {completedTasks === 0
               ? "Complete tasks to light the sky."
               : `${(5 - (completedTasks % 5)) % 5 || 5} more until a new star appears.`}
@@ -136,8 +148,16 @@ export default function ConstellationWorld({
       {/* Zoom controls — dark glass on dark sky */}
       <div className="pointer-events-auto absolute right-4 top-4 flex flex-col gap-2 sm:right-6 sm:top-6">
         {[
-          { label: "Zoom in",  icon: <ZoomIn size={16} />,  fn: () => adjustZoom(0.1) },
-          { label: "Zoom out", icon: <ZoomOut size={16} />, fn: () => adjustZoom(-0.1) },
+          {
+            label: "Zoom in",
+            icon: <ZoomIn size={16} />,
+            fn: () => adjustZoom(0.1),
+          },
+          {
+            label: "Zoom out",
+            icon: <ZoomOut size={16} />,
+            fn: () => adjustZoom(-0.1),
+          },
           { label: "Recenter", icon: <Compass size={16} />, fn: recenter },
         ].map(({ label, icon, fn }) => (
           <button
@@ -160,7 +180,10 @@ export default function ConstellationWorld({
 
       <NANIGuide onOpenChat={onOpenNaniChat} />
       <LoreModal progress={selected} onClose={() => setSelected(null)} />
-      <DiscoveryReveal milestone={activeMilestone} onDismiss={dismissMilestone} />
+      <DiscoveryReveal
+        milestone={activeMilestone}
+        onDismiss={dismissMilestone}
+      />
     </div>
   );
 }
