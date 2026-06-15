@@ -7,6 +7,10 @@ import { NaniProvider } from "@/components/providers/NaniProvider";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import AppShell from "@/components/layout/AppShell";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "Nagare",
@@ -15,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
       <head>
         {/*
           Flash-prevention script — runs before React hydrates.

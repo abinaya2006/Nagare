@@ -48,7 +48,7 @@ export default function SchedulePreview() {
         <AnimatePresence mode="popLayout">
           {!isLoading && slots.map((slot, i) => (
             <motion.div
-              key={slot.taskId ?? i}
+              key={`${slot.taskId ?? 'slot'}-${i}`}
               layout
               initial={{ opacity: 0, scale: 0.9, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}

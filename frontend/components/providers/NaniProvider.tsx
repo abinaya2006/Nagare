@@ -90,16 +90,19 @@ export function NaniProvider({ children }: { children: ReactNode }) {
       };
 
       // ✅ Handle schedule display
+      // ✅ Handle schedule display
       if (data?.data?.updated_schedule?.length > 0) {
         const items = data.data.updated_schedule;
         const scheduleText = items
           .map((item: any) => {
-            const start = new Date(item.start_time).toLocaleTimeString("en-IN", {
+            const startStr = item.start_time.endsWith('Z') ? item.start_time : item.start_time + 'Z';
+            const endStr = item.end_time.endsWith('Z') ? item.end_time : item.end_time + 'Z';
+            const start = new Date(startStr).toLocaleTimeString("en-IN", {
               hour: "numeric",
               minute: "2-digit",
               hour12: true,
             });
-            const end = new Date(item.end_time).toLocaleTimeString("en-IN", {
+            const end = new Date(endStr).toLocaleTimeString("en-IN", {
               hour: "numeric",
               minute: "2-digit",
               hour12: true,
