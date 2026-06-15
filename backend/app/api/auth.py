@@ -53,8 +53,8 @@ def login(payload: AuthRequest, response: Response) -> LoginResponse:
             "pulse_access_token",
             session.access_token,
             httponly=True,
-            secure=get_settings().environment != "development",
-            samesite="lax",
+            secure=True,  # always True for cross-origin
+            samesite="none",  # ✅ required for cross-origin cookies
         )
 
         return LoginResponse(
@@ -84,5 +84,10 @@ def get_current_user_profile(
 def logout(
     response: Response, current_user: AuthUser = Depends(get_current_user)
 ) -> dict[str, str]:
-    response.delete_cookie("pulse_access_token")
+    response.delete_cookie(
+        "pulse_access_token",
+        path="/",
+        secure=True,
+        samesite="none",
+    )
     return {"message": "Logged out successfully"}
