@@ -1,24 +1,45 @@
-export type TaskCategory = "focus" | "admin" | "creative" | "health" | "social";
-export type Priority = "high" | "medium" | "low";
+// Task types
+export type TaskPriority = "critical" | "high" | "medium" | "low";
+export type TaskState = "waiting" | "flowing" | "resolved" | "overdue";
+export type TaskSegment = "morning" | "afternoon" | "evening";
+export type TaskCategory =
+  | "Study"
+  | "Projects"
+  | "Creative Work"
+  | "Exploration"
+  | "Habits";
+export type Constellation =
+  | "The Scholar"
+  | "The Builder"
+  | "The Dreamer"
+  | "The Explorer"
+  | "The Guardian";
 
 export interface Task {
   id: string;
   title: string;
+  priority: TaskPriority;
+  state: TaskState;
   category: TaskCategory;
-  priority: Priority;
-  deadline: string; // ISO date string
-  estimatedDuration: number; // minutes
-  done: boolean;
-  completed: boolean;
-  dueToday: boolean;
+  constellation: Constellation;
+  deadline: string;
+  duration: string;
+  energy: "Low" | "Medium" | "High";
+  notes?: string;
+  segment: TaskSegment;
+  createdAt: string;
 }
 
+export type TaskInput = Partial<Task> & { title: string };
+
+// Schedule
 export interface ScheduleBlock {
   id: string;
   time: string;
   label: string;
 }
 
+// NANI
 export interface NaniMessage {
   id: string;
   role: "user" | "nani";
@@ -26,12 +47,14 @@ export interface NaniMessage {
   timestamp: string;
 }
 
+// Dashboard
 export interface MindSnapshotData {
   total: number;
   pending: number;
   completed: number;
 }
 
+// User
 export interface User {
   id: string;
   name: string;

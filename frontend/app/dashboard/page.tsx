@@ -16,6 +16,7 @@ import FocusBeacon from "@/components/dashboard/Pomodoro";
 import { useNaniSidebar } from "@/components/providers/NaniProvider";
 import { useTasks } from "@/contexts/TaskContext";
 import { useAuth } from "@/contexts/AuthContext";
+import type { Task } from "@/types";
 
 function isSameDay(a: Date, b: Date) {
   return (
@@ -45,33 +46,42 @@ export default function DashboardPage() {
   useEffect(() => {
     const raw = localStorage.getItem("nagare_onboarding");
     if (raw) {
-      try { const data = JSON.parse(raw); console.log("🌊 Onboarding:", data.answers); } catch {}
+      try {
+        const data = JSON.parse(raw);
+        console.log("🌊 Onboarding:", data.answers);
+      } catch {}
     }
   }, []);
 
   useEffect(() => {
     if (authLoading || !session?.access_token) return;
-    api.get("/auth/me").then(({ data }) => {
-      const email: string = data?.email ?? "";
-      setUserName(data?.name || email.split("@")[0]);
-    }).catch(() => {});
+    api
+      .get("/auth/me")
+      .then(({ data }) => {
+        const email: string = data?.email ?? "";
+        setUserName(data?.name || email.split("@")[0]);
+      })
+      .catch(() => {});
   }, [authLoading, session]);
 
   const now = new Date();
 
   // Only show non-resolved tasks everywhere
-  const pendingTasks = tasks.filter((t) => t.state !== "resolved");
+  const pendingTasks = tasks.filter((t) => (t as Task).state !== "resolved");
   const todaysTasks = pendingTasks.filter((t) =>
-    t.deadline ? isSameDay(new Date(t.deadline), now) : false
+    t.deadline ? isSameDay(new Date(t.deadline), now) : false,
   );
   const upcomingDeadlines = pendingTasks
     .filter((t) => t.deadline && !isSameDay(new Date(t.deadline), now))
-    .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime());
+    .sort(
+      (a, b) =>
+        new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime(),
+    );
 
   const snapshot = {
     total: tasks.length,
     pending: pendingTasks.length,
-    completed: tasks.filter((t) => t.state === "resolved").length,
+    completed: tasks.filter((t) => (t as Task).state === "resolved").length,
   };
 
   // Just call completeTask — it optimistically sets state:"resolved" immediately
@@ -96,19 +106,23 @@ export default function DashboardPage() {
             {greeting}, {userName}.
           </h1>
           <p className="mt-1 text-sm text-ink-soft">
-            {loading ? "Gathering your thoughts…" : "Your thoughts are gathering."}
+            {loading
+              ? "Gathering your thoughts…"
+              : "Your thoughts are gathering."}
           </p>
         </div>
 
         <div className="flex items-start gap-3">
           <FocusBeacon />
-
         </div>
       </header>
 
       <section className="relative z-10 mx-auto mt-10 grid max-w-6xl gap-6 lg:grid-cols-[300px_1fr_300px] lg:items-center">
         <div className="order-2 lg:order-1">
-          <TodaysFlow todaysTasks={todaysTasks} upcomingDeadlines={upcomingDeadlines} />
+          <TodaysFlow
+            todaysTasks={todaysTasks}
+            upcomingDeadlines={upcomingDeadlines}
+          />
         </div>
         <div className="order-1 lg:order-2">
           <MemoryJar tasks={tasks} onCompleteTask={handleCompleteTask} />
