@@ -73,17 +73,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
 
       async signup(email, password) {
-        // ✅ Clear logout flag on signup too
         document.cookie = "logged_out=; path=/; max-age=0; SameSite=Lax";
-
         await api.post("/auth/signup", { email, password });
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData.session) {
-          setAuthToken(sessionData.session.access_token);
-          router.push("/onboarding");
-        } else {
-          router.push("/login?confirm=true");
-        }
+        // Tell middleware to allow /login even if token exists
+        document.cookie = "signup_redirect=true; path=/; SameSite=Lax";
+        router.push("/login?confirm=true");
       },
 
       async logout() {

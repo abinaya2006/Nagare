@@ -99,6 +99,7 @@ function OptionCard({
       dragElastic={0.25}
       onDragEnd={handleDragEnd}
       onClick={onSelect}
+      className="relative flex items-center gap-3 w-full text-left rounded-2xl px-5 py-4 cursor-pointer outline-none focus-visible:ring-2"
       style={{
         x,
         background: isSelected ? accentBg : "rgba(255,255,255,0.72)",

@@ -1,14 +1,16 @@
 from datetime import datetime, time
 from enum import Enum
 from uuid import UUID
-from pydantic import BaseModel, Field, field_validator, model_validator
+
 from app.core.security import sanitize_text
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class Priority(str, Enum):
     low = "low"
     medium = "medium"
     high = "high"
+    critical = "critical"  # ← add this
 
 
 class TaskStatus(str, Enum):
@@ -69,8 +71,14 @@ class TaskBase(BaseModel):
     @model_validator(mode="after")
     def validate_fixed_time_block(self):
         if (self.fixed_start_time is None) != (self.fixed_end_time is None):
-            raise ValueError("fixed_start_time and fixed_end_time must be provided together")
-        if self.fixed_start_time and self.fixed_end_time and self.fixed_end_time <= self.fixed_start_time:
+            raise ValueError(
+                "fixed_start_time and fixed_end_time must be provided together"
+            )
+        if (
+            self.fixed_start_time
+            and self.fixed_end_time
+            and self.fixed_end_time <= self.fixed_start_time
+        ):
             raise ValueError("fixed_end_time must be after fixed_start_time")
         if self.recurrence_rule and not self.is_routine:
             raise ValueError("recurrence_rule requires is_routine to be true")
@@ -131,4 +139,3 @@ class TaskMutationResponse(BaseModel):
 
 class TaskMessageResponse(BaseModel):
     message: str
-
