@@ -23,11 +23,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // ✅ Restore token from localStorage on page load
+    const savedToken = localStorage.getItem("nagare_token");
+    if (savedToken) setAuthToken(savedToken);
+
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null);
       setSession(data.session ?? null);
       if (data.session?.access_token) {
         setAuthToken(data.session.access_token);
+        localStorage.setItem("nagare_token", data.session.access_token);
       }
       setLoading(false);
     });
@@ -53,43 +58,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       async login(email, password) {
         document.cookie = "logged_out=; path=/; max-age=0; SameSite=Lax";
-
         const { data } = await api.post("/auth/login", { email, password });
+
+        // ✅ Store token for production (cross-origin, cookie won't work)
+        if (data.access_token) {
+          localStorage.setItem("nagare_token", data.access_token);
+          setAuthToken(data.access_token);
+          // ✅ Set readable cookie for middleware
+          document.cookie = `nagare_token=1; path=/; SameSite=Lax`;
+        }
+
         await supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token,
         });
-        setAuthToken(data.access_token);
-        await new Promise((r) => setTimeout(r, 200));
 
+        await new Promise((r) => setTimeout(r, 200));
         try {
           const { data: prefsData } = await api.get("/preferences/me");
           const hasPreferences = !!prefsData?.preferences;
-          // ✅ hard navigate so browser sends fresh cookies to middleware
-          window.location.href = hasPreferences ? "/dashboard" : "/onboarding";
+          if (hasPreferences) {
+            window.location.href = "/dashboard";
+          } else {
+            window.location.replace("/onboarding");
+          }
         } catch {
-          window.location.href = "/onboarding";
+          window.location.replace("/onboarding");
         }
       },
 
       async signup(email, password) {
         document.cookie = "logged_out=; path=/; max-age=0; SameSite=Lax";
-        await api.post("/auth/signup", { email, password });
-        // Tell middleware to allow /login even if token exists
-        document.cookie = "signup_redirect=true; path=/; SameSite=Lax";
-        router.push("/login?confirm=true");
+        const { data } = await api.post("/auth/signup", { email, password });
+
+        if (data?.access_token && data?.refresh_token) {
+          localStorage.setItem("nagare_token", data.access_token);
+          setAuthToken(data.access_token);
+          document.cookie = `nagare_token=1; path=/; SameSite=Lax`;
+          await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+          });
+        }
+
+        window.location.replace("/onboarding");
       },
 
       async logout() {
-        // ✅ Skip backend call — token may be undefined, cookie is httponly so backend can't clear it properly anyway
         await supabase.auth.signOut();
         setAuthToken(undefined);
         localStorage.clear();
         sessionStorage.clear();
-
-        // ✅ Set logout flag — middleware checks this to block access even if pulse_access_token cookie lingers
+        // ✅ Clear all auth cookies
         document.cookie = "logged_out=true; path=/; SameSite=Lax";
-
+        document.cookie = "nagare_token=; path=/; max-age=0; SameSite=Lax";
         window.location.href = "/login";
       },
     }),
