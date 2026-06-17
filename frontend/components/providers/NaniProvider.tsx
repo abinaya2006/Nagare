@@ -1,5 +1,11 @@
 "use client";
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
 import { api } from "@/services/api";
 import { supabase } from "@/lib/supabase";
 import type { NaniMessage } from "@/types";
@@ -23,7 +29,8 @@ export function NaniProvider({ children }: { children: ReactNode }) {
     {
       id: "welcome",
       role: "nani",
-      content: "I'm here. Whenever you're ready, tell me what's drifting through your mind.",
+      content:
+        "I'm here. Whenever you're ready, tell me what's drifting through your mind.",
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -47,7 +54,7 @@ export function NaniProvider({ children }: { children: ReactNode }) {
     try {
       // ✅ Get fresh token from Supabase session
       const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
+      const token = localStorage.getItem("nagare_token");
 
       if (!token) {
         setError("You need to be logged in for NANI to respond.");
@@ -85,7 +92,10 @@ export function NaniProvider({ children }: { children: ReactNode }) {
       const reply: NaniMessage = {
         id: `nani-${Date.now()}`,
         role: "nani",
-        content: data?.response ?? data?.summary ?? "I'm holding that thought with you.",
+        content:
+          data?.response ??
+          data?.summary ??
+          "I'm holding that thought with you.",
         timestamp: new Date().toISOString(),
       };
 
@@ -95,8 +105,12 @@ export function NaniProvider({ children }: { children: ReactNode }) {
         const items = data.data.updated_schedule;
         const scheduleText = items
           .map((item: any) => {
-            const startStr = item.start_time.endsWith('Z') ? item.start_time : item.start_time + 'Z';
-            const endStr = item.end_time.endsWith('Z') ? item.end_time : item.end_time + 'Z';
+            const startStr = item.start_time.endsWith("Z")
+              ? item.start_time
+              : item.start_time + "Z";
+            const endStr = item.end_time.endsWith("Z")
+              ? item.end_time
+              : item.end_time + "Z";
             const start = new Date(startStr).toLocaleTimeString("en-IN", {
               hour: "numeric",
               minute: "2-digit",
@@ -118,7 +132,10 @@ export function NaniProvider({ children }: { children: ReactNode }) {
         try {
           // Extract just the task title - remove common prefixes and duration
           const taskTitle = trimmed
-            .replace(/^(add|create|make|schedule)\s+(a\s+)?(task\s*)?(:|-)?\s*/i, "")
+            .replace(
+              /^(add|create|make|schedule)\s+(a\s+)?(task\s*)?(:|-)?\s*/i,
+              "",
+            )
             .replace(/,?\s*\d+\s*(hour|hr|minute|min)s?.*/i, "")
             .trim()
             .slice(0, 160);
@@ -129,8 +146,8 @@ export function NaniProvider({ children }: { children: ReactNode }) {
           const duration = durationMatch
             ? parseInt(durationMatch[1]) * 60
             : minuteMatch
-            ? parseInt(minuteMatch[1])
-            : 30;
+              ? parseInt(minuteMatch[1])
+              : 30;
 
           await api.post(
             "/tasks",
@@ -172,6 +189,7 @@ export function NaniProvider({ children }: { children: ReactNode }) {
 
 export function useNaniSidebar(): NaniContextValue {
   const ctx = useContext(NaniContext);
-  if (!ctx) throw new Error("useNaniSidebar must be used within a NaniProvider");
+  if (!ctx)
+    throw new Error("useNaniSidebar must be used within a NaniProvider");
   return ctx;
 }

@@ -136,12 +136,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setAuthToken(session?.access_token);
-  }, [session]);
-
   const refresh = useCallback(async () => {
-    if (!user) {
+    const token = localStorage.getItem("nagare_token");
+
+    if (!token) {
       setTasks([]);
       return;
     }
