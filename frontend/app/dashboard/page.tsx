@@ -55,8 +55,13 @@ export default function DashboardPage() {
     }
   }, []);
 
+  console.log("AUTH LOADING:", authLoading);
+  console.log("SESSION:", session);
+
   useEffect(() => {
-    if (authLoading || !session?.access_token) return;
+    const token = localStorage.getItem("nagare_token");
+
+    if (authLoading || !token) return;
     api
       .get("/auth/me")
       .then(({ data }) => {

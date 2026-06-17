@@ -28,6 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (savedToken) setAuthToken(savedToken);
 
     supabase.auth.getSession().then(({ data }) => {
+      console.log("RESTORED SESSION:", data.session);
+
       setUser(data.session?.user ?? null);
       setSession(data.session ?? null);
       if (data.session?.access_token) {
