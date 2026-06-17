@@ -56,9 +56,9 @@ app.add_middleware(AuditLogMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)  # ← move security before CORS add
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "https://nagare-flow.vercel.app"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
