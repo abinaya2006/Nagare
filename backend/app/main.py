@@ -51,9 +51,9 @@ app.openapi = custom_openapi
 app.state.limiter = limiter
 # ✅ CORS must be added LAST so it executes FIRST on incoming requests
 app.add_middleware(SlowAPIMiddleware)
-app.add_middleware(RequestSizeLimitMiddleware)
-app.add_middleware(AuditLogMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)  # ← move security before CORS add
+# app.add_middleware(RequestSizeLimitMiddleware)
+# app.add_middleware(AuditLogMiddleware)
+# app.add_middleware(SecurityHeadersMiddleware)  # ← move security before CORS add
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "https://nagare-flow.vercel.app"],
