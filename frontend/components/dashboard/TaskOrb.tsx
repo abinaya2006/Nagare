@@ -58,16 +58,19 @@ export default function TaskOrb({
   onDragEnd,
   settled,
 }: TaskOrbProps) {
-  const palette = task.completed
-    ? COMPLETED_STYLE
-    : PRIORITY_STYLES[task.priority];
-  const size = task.completed
-    ? 52
-    : task.priority === "high"
-      ? 76
-      : task.priority === "medium"
-        ? 68
-        : 60;
+  const palette =
+    task.state === "resolved"
+      ? COMPLETED_STYLE
+      : PRIORITY_STYLES[task.priority];
+
+  const size =
+    task.state === "resolved"
+      ? 52
+      : task.priority === "high"
+        ? 76
+        : task.priority === "medium"
+          ? 68
+          : 60;
   const isDragging = useRef(false);
 
   return (

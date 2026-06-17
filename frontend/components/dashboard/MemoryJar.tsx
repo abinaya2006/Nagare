@@ -8,7 +8,7 @@ import type { Task } from "@/types";
 
 interface MemoryJarProps {
   tasks: Task[];
-  onCompleteTask: (taskId: string) => Promise<void>;
+  onCompleteTask: (taskId: string) => Promise<void>; // already correct
 }
 
 const JAR_RADIUS = 150;
@@ -19,9 +19,15 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
   const jarRef = useRef<HTMLDivElement>(null);
 
   // Only show pending (non-resolved) tasks as orbs
-  const pendingTasks = tasks.filter((t) => t.state !== "resolved" && t.id !== completing);
+  const pendingTasks = tasks.filter(
+    (t) => t.state !== "resolved" && t.id !== completing,
+  );
   const orbIds = pendingTasks.map((t) => t.id);
-  const { positions, setOrbPosition, releaseOrb } = useTaskPhysics(orbIds, JAR_RADIUS, 30);
+  const { positions, setOrbPosition, releaseOrb } = useTaskPhysics(
+    orbIds,
+    JAR_RADIUS,
+    30,
+  );
 
   const pendingCount = pendingTasks.length;
   const allDone = pendingCount === 0;
@@ -32,7 +38,10 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
     const maxDist = JAR_RADIUS - orbR;
     if (dist > maxDist) {
       const angle = Math.atan2(pos.y, pos.x);
-      setOrbPosition(id, { x: Math.cos(angle) * maxDist, y: Math.sin(angle) * maxDist });
+      setOrbPosition(id, {
+        x: Math.cos(angle) * maxDist,
+        y: Math.sin(angle) * maxDist,
+      });
     } else {
       setOrbPosition(id, pos);
     }
@@ -70,9 +79,15 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
         ref={jarRef}
         className="absolute bottom-0 h-[88%] w-[88%] rounded-[48%_48%_42%_42%/40%_40%_46%_46%] backdrop-blur-md overflow-hidden"
         animate={{ scale: allDone ? [1, 1.02, 1] : [1, 1.012, 1] }}
-        transition={{ duration: allDone ? 3 : 8, repeat: Infinity, ease: "easeInOut" }}
+        transition={{
+          duration: allDone ? 3 : 8,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
         style={{
-          border: allDone ? "1.5px solid rgba(201,182,255,0.8)" : "1.5px solid rgba(255,255,255,0.7)",
+          border: allDone
+            ? "1.5px solid rgba(201,182,255,0.8)"
+            : "1.5px solid rgba(255,255,255,0.7)",
           background: allDone
             ? "linear-gradient(160deg, rgba(220,210,255,0.45) 0%, rgba(201,182,255,0.25) 40%, rgba(221,238,255,0.3) 100%)"
             : "linear-gradient(160deg, rgba(255,255,255,0.35) 0%, rgba(232,225,255,0.2) 40%, rgba(221,238,255,0.25) 100%)",
@@ -104,8 +119,12 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
         aria-hidden="true"
         className="absolute top-[6%] h-[10%] w-[40%] rounded-t-[40%] backdrop-blur-md"
         style={{
-          border: allDone ? "1.5px solid rgba(201,182,255,0.7)" : "1.5px solid rgba(255,255,255,0.7)",
-          background: allDone ? "rgba(220,210,255,0.35)" : "rgba(255,255,255,0.30)",
+          border: allDone
+            ? "1.5px solid rgba(201,182,255,0.7)"
+            : "1.5px solid rgba(255,255,255,0.7)",
+          background: allDone
+            ? "rgba(220,210,255,0.35)"
+            : "rgba(255,255,255,0.30)",
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
           transition: "background 1s, border-color 1s",
         }}

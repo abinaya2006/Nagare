@@ -17,6 +17,7 @@ import { useNaniSidebar } from "@/components/providers/NaniProvider";
 import { useTasks } from "@/contexts/TaskContext";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Task } from "@/types";
+import QuickAddTaskModal from "@/components/dashboard/QuickAddTaskModal";
 
 function isSameDay(a: Date, b: Date) {
   return (
@@ -33,6 +34,7 @@ export default function DashboardPage() {
   const [isExpanding, setIsExpanding] = useState(false);
   const [greeting, setGreeting] = useState("Hello");
   const [userName, setUserName] = useState("there");
+  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
 
   const { isOpen: isNaniOpen, open: openNani } = useNaniSidebar();
 
@@ -112,7 +114,43 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center gap-1.5">
+            <motion.button
+              onClick={() => setIsAddTaskOpen(true)}
+              aria-label="Add task"
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+              className="flex h-14 w-14 items-center justify-center rounded-full"
+              style={{
+                border: "1.5px solid rgba(200,196,220,0.5)",
+                background:
+                  "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.92) 0%, rgba(232,225,255,0.75) 60%, rgba(221,238,255,0.65) 100%)",
+                boxShadow: "0 2px 14px rgba(200,196,220,0.22)",
+                position: "relative",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: "10%",
+                  left: "18%",
+                  width: "28%",
+                  height: "32%",
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.75)",
+                  filter: "blur(2px)",
+                  pointerEvents: "none",
+                }}
+              />
+              <Plus size={18} color="#b8a9e8" strokeWidth={1.8} />
+            </motion.button>
+            <span className="text-xs" style={{ color: "#6D7088" }}>
+              Task
+            </span>
+          </div>
           <FocusBeacon />
         </div>
       </header>
@@ -137,6 +175,10 @@ export default function DashboardPage() {
       </section>
 
       <NANIOrb onClick={openNani} isOpen={isNaniOpen} />
+      <QuickAddTaskModal
+        isOpen={isAddTaskOpen}
+        onClose={() => setIsAddTaskOpen(false)}
+      />
 
       <AnimatePresence>
         {isExpanding && (

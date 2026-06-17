@@ -60,11 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         document.cookie = "logged_out=; path=/; max-age=0; SameSite=Lax";
         const { data } = await api.post("/auth/login", { email, password });
 
-        // ✅ Store token for production (cross-origin, cookie won't work)
         if (data.access_token) {
           localStorage.setItem("nagare_token", data.access_token);
           setAuthToken(data.access_token);
-          // ✅ Set readable cookie for middleware
           document.cookie = `nagare_token=1; path=/; SameSite=Lax`;
         }
 
@@ -73,16 +71,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           refresh_token: data.refresh_token,
         });
 
-        await new Promise((r) => setTimeout(r, 200));
-        try {
-          const { data: prefsData } = await api.get("/preferences/me");
-          const hasPreferences = !!prefsData?.preferences;
-          if (hasPreferences) {
-            window.location.href = "/dashboard";
-          } else {
-            window.location.replace("/onboarding");
+        await new Promise((r) => setTimeout(r, 500)); // ✅ increased from 200ms
+
+        // ✅ Retry preferences check up to 3 times
+        let hasPreferences = false;
+        for (let i = 0; i < 3; i++) {
+          try {
+            const { data: prefsData } = await api.get("/preferences/me");
+            hasPreferences = !!prefsData?.preferences;
+            break;
+          } catch {
+            await new Promise((r) => setTimeout(r, 300));
           }
-        } catch {
+        }
+
+        if (hasPreferences) {
+          window.location.href = "/dashboard";
+        } else {
           window.location.replace("/onboarding");
         }
       },

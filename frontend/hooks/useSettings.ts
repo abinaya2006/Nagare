@@ -23,7 +23,11 @@ interface UseSettingsResult {
 
 function focusDurationToMinutes(d: string): number {
   const map: Record<string, number> = {
-    "15-25": 20, "30-45": 37, "45-60": 52, "60-90": 75, "90+": 120,
+    "15-25": 20,
+    "30-45": 37,
+    "45-60": 52,
+    "60-90": 75,
+    "90+": 120,
   };
   return map[d] ?? 52;
 }
@@ -61,17 +65,19 @@ function lifeCurrentToTaskCount(l: string): number {
 }
 
 function mapToPayload(preferences: FlowPreferences) {
-  const routine_tasks = preferences.protectedBlocks.map((block) => {
-    const pad = (n: number) => String(Math.floor(n)).padStart(2, "0");
-    const toTime = (h: number) => `${pad(h)}:${h % 1 === 0.5 ? "30" : "00"}`;
-    return {
-      title: block.label,
-      start_time: toTime(block.startHour),
-      end_time: toTime(block.endHour),
-      days: ["daily"],
-      is_active: true,
-    };
-  });
+  const routine_tasks = preferences.protectedBlocks
+    .filter((block) => block.endHour > block.startHour) // ✅ skip overnight blocks
+    .map((block) => {
+      const pad = (n: number) => String(Math.floor(n)).padStart(2, "0");
+      const toTime = (h: number) => `${pad(h)}:${h % 1 === 0.5 ? "30" : "00"}`;
+      return {
+        title: block.label,
+        start_time: toTime(block.startHour),
+        end_time: toTime(block.endHour),
+        days: ["daily"],
+        is_active: true,
+      };
+    });
 
   return {
     productivity_period: preferences.circadianPeriod,
@@ -84,7 +90,10 @@ function mapToPayload(preferences: FlowPreferences) {
   };
 }
 
-export function useSettings(preferences: FlowPreferences, profile: UserProfile): UseSettingsResult {
+export function useSettings(
+  preferences: FlowPreferences,
+  profile: UserProfile,
+): UseSettingsResult {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoggedOut, setIsLoggedOut] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -95,28 +104,40 @@ export function useSettings(preferences: FlowPreferences, profile: UserProfile):
     const lines: string[] = [CIRCADIAN_NANI_LINES[preferences.circadianPeriod]];
     if (preferences.energySources.length > 0) {
       const top = preferences.energySources[0];
-      lines.push(`You focus longest when working on ${ENERGY_SOURCE_LABELS[top].toLowerCase()}.`);
+      lines.push(
+        `You focus longest when working on ${ENERGY_SOURCE_LABELS[top].toLowerCase()}.`,
+      );
     }
     if (preferences.energyDrainers.length > 0) {
       const top = preferences.energyDrainers[0];
-      lines.push(`Your energy dips after ${ENERGY_DRAINER_LABELS[top].toLowerCase()}.`);
+      lines.push(
+        `Your energy dips after ${ENERGY_DRAINER_LABELS[top].toLowerCase()}.`,
+      );
     }
-    lines.push(`You thrive with ${FOCUS_DURATION_LABELS[preferences.focusDuration]} focus sessions.`);
+    lines.push(
+      `You thrive with ${FOCUS_DURATION_LABELS[preferences.focusDuration]} focus sessions.`,
+    );
     if (preferences.protectedBlocks.length > 0) {
-      lines.push(`I'll keep ${preferences.protectedBlocks.length} part${preferences.protectedBlocks.length === 1 ? "" : "s"} of your day protected, always.`);
+      lines.push(
+        `I'll keep ${preferences.protectedBlocks.length} part${preferences.protectedBlocks.length === 1 ? "" : "s"} of your day protected, always.`,
+      );
     }
     return lines.slice(0, 4);
   }, [preferences]);
-
   const save = useCallback(async () => {
     setIsSaving(true);
     setSaveError(null);
     try {
+      console.log("🛡️ Protected blocks:", preferences.protectedBlocks);
       const payload = mapToPayload(preferences);
+      console.log("📤 Payload:", JSON.stringify(payload, null, 2));
       await api.put("/preferences/me", payload);
       return true;
-    } catch {
-      setSaveError("Your world didn't quite catch the update. Try again in a moment.");
+    } catch (err: any) {
+      console.error("❌ Save error:", err.response?.data);
+      setSaveError(
+        "Your world didn't quite catch the update. Try again in a moment.",
+      );
       return false;
     } finally {
       setIsSaving(false);

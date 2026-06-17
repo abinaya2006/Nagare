@@ -1,35 +1,32 @@
-import { NextResponse } from "next/server";
-import type { ScheduleBlock } from "@/types";
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
-const FLOW_VARIANTS: ScheduleBlock[][] = [
-  [
-    { id: "g1", time: "9:00", label: "Deep Work" },
-    { id: "g2", time: "11:00", label: "Break" },
-    { id: "g3", time: "11:30", label: "Coding" },
-    { id: "g4", time: "14:00", label: "Lunch" },
-    { id: "g5", time: "15:00", label: "Project Work" },
-  ],
-  [
-    { id: "g1", time: "8:30", label: "Quiet Planning" },
-    { id: "g2", time: "9:30", label: "Focus Block" },
-    { id: "g3", time: "12:00", label: "Lunch" },
-    { id: "g4", time: "13:00", label: "Meetings" },
-    { id: "g5", time: "16:00", label: "Wind Down" },
-  ],
-  [
-    { id: "g1", time: "7:30", label: "Morning Walk" },
-    { id: "g2", time: "9:00", label: "Creative Work" },
-    { id: "g3", time: "11:30", label: "Admin & Email" },
-    { id: "g4", time: "13:00", label: "Lunch" },
-    { id: "g5", time: "14:30", label: "Collaborative Work" },
-  ],
-];
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const cookieStore = cookies();
 
-/**
- * POST /api/v1/schedule/generate
- * Returns a freshly suggested daily flow.
- */
-export async function POST() {
-  const flow = FLOW_VARIANTS[Math.floor(Math.random() * FLOW_VARIANTS.length)];
-  return NextResponse.json({ flow });
+  // Forward the auth token from the request headers
+  const authHeader = req.headers.get("authorization") ?? "";
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/schedule/generate`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
+        body: JSON.stringify(body),
+      },
+    );
+
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Failed to reach backend" },
+      { status: 502 },
+    );
+  }
 }

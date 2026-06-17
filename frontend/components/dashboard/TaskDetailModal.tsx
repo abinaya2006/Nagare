@@ -4,10 +4,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X, Clock, Calendar, CheckCircle2 } from "lucide-react";
 import type { Task } from "@/types";
 
+// line 9 — fix the type
 interface TaskDetailModalProps {
   task: Task | null;
   onClose: () => void;
-  onComplete: (taskId: string) => void;
+  onComplete: (taskId: string) => Promise<void>; // ← was just void
 }
 
 const PRIORITY_LABEL: Record<Task["priority"], string> = {
@@ -111,7 +112,7 @@ export default function TaskDetailModal({
               {task.state !== "resolved" && (
                 <button
                   type="button"
-                  onClick={() => onComplete(task.id)}
+                  onClick={() => onComplete(task.id)} // ← remove onClose() from here
                   className="flex items-center gap-2 rounded-full bg-lavglow/70 px-5 py-2.5 text-sm font-medium text-[#4f3f8a] shadow-glow-lav transition hover:bg-lavglow/90"
                 >
                   <CheckCircle2 size={16} />
