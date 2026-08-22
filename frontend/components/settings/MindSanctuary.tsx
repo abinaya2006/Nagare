@@ -16,6 +16,8 @@ import DreamRecovery from "./DreamRecovery";
 import NANIInsights from "./NANIInsights";
 import PersonalizeButton from "./PersonalizeButton";
 import ReturnToStillness from "./ReturnToStillness";
+// import NANIInsights from "./NANIInsights";
+import NANIPulse from "./NANIPulse";
 
 export default function MindSanctuary() {
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
@@ -90,6 +92,8 @@ export default function MindSanctuary() {
         </div>
         <div>
           <NANIInsights insights={insights} />
+          <NANIPulse />
+
         </div>
       </div>
       {saveError && (
