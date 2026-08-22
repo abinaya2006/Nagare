@@ -23,11 +23,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // ✅ Restore token from localStorage on page load
+    const savedToken = localStorage.getItem("nagare_token");
+    if (savedToken) setAuthToken(savedToken);
+
     supabase.auth.getSession().then(({ data }) => {
+      console.log("RESTORED SESSION:", data.session);
+
       setUser(data.session?.user ?? null);
       setSession(data.session ?? null);
       if (data.session?.access_token) {
         setAuthToken(data.session.access_token);
+        localStorage.setItem("nagare_token", data.session.access_token);
       }
       setLoading(false);
     });
@@ -50,44 +57,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       session,
       loading,
+
       async login(email, password) {
+        document.cookie = "logged_out=; path=/; max-age=0; SameSite=Lax";
         const { data } = await api.post("/auth/login", { email, password });
+
+        if (data.access_token) {
+          localStorage.setItem("nagare_token", data.access_token);
+          setAuthToken(data.access_token);
+          document.cookie = `nagare_token=1; path=/; SameSite=Lax`;
+        }
+
         await supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token,
         });
-        setAuthToken(data.access_token);
-        await new Promise(r => setTimeout(r, 200));
-        try {
-          const { data: prefsData } = await api.get("/preferences/me");
-          const hasPreferences = !!prefsData?.preferences;
-          router.push(hasPreferences ? '/dashboard' : '/onboarding');
-        } catch {
-          router.push('/onboarding');
+
+        await new Promise((r) => setTimeout(r, 500)); // ✅ increased from 200ms
+
+        // ✅ Retry preferences check up to 3 times
+        let hasPreferences = false;
+        for (let i = 0; i < 3; i++) {
+          try {
+            const { data: prefsData } = await api.get("/preferences/me");
+            hasPreferences = !!prefsData?.preferences;
+            break;
+          } catch {
+            await new Promise((r) => setTimeout(r, 300));
+          }
         }
-      },
-      async signup(email, password) {
-        await api.post("/auth/signup", { email, password });
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData.session) {
-          setAuthToken(sessionData.session.access_token);
-          router.push("/onboarding");
+
+        if (hasPreferences) {
+          window.location.href = "/dashboard";
         } else {
-          router.push("/login?confirm=true");
+          window.location.replace("/onboarding");
         }
       },
-      async logout() {
-        try {
-          const session = await supabase.auth.getSession();
-          const token = session.data.session?.access_token;
-          await api.post("/auth/logout", {}, {
-            headers: { Authorization: `Bearer ${token}` }
+
+      async signup(email, password) {
+        document.cookie = "logged_out=; path=/; max-age=0; SameSite=Lax";
+        const { data } = await api.post("/auth/signup", { email, password });
+
+        if (data?.access_token && data?.refresh_token) {
+          localStorage.setItem("nagare_token", data.access_token);
+          setAuthToken(data.access_token);
+          document.cookie = `nagare_token=1; path=/; SameSite=Lax`;
+          await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
           });
-        } catch {}
+        }
+
+        window.location.replace("/onboarding");
+      },
+
+      async logout() {
         await supabase.auth.signOut();
         setAuthToken(undefined);
-        localStorage.removeItem("nagare-auth");
-        localStorage.removeItem("nagare_onboarding");
+        localStorage.clear();
+        sessionStorage.clear();
+        // ✅ Clear all auth cookies
+        document.cookie = "logged_out=true; path=/; SameSite=Lax";
+        document.cookie = "nagare_token=; path=/; max-age=0; SameSite=Lax";
         window.location.href = "/login";
       },
     }),

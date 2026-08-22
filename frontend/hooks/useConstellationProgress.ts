@@ -1,25 +1,16 @@
 "use client";
-
 import { useMemo } from "react";
 import { CONSTELLATIONS, type ConstellationData } from "@/lib/world-data";
 
 export interface ConstellationProgress {
   constellation: ConstellationData;
-  /** how many of this constellation's stars are currently revealed */
   revealedStarCount: number;
-  /** connection pairs (star indices) currently visible */
   revealedConnections: [number, number][];
-  /** true once enough Flow Energy has gathered for this constellation's lore */
   unlocked: boolean;
 }
 
-const STARS_PER_REVEAL = 5; // "every 5 tasks: reveal a new star"
+const STARS_PER_REVEAL = 2; // every 2 completed tasks reveals 1 star
 
-/**
- * Derives, from total completed tasks, how much of each constellation is
- * currently visible: which stars have appeared, which are connected, and
- * whether the constellation itself - and its lore - has been unlocked.
- */
 export function useConstellationProgress(completedTasks: number): ConstellationProgress[] {
   return useMemo(() => {
     const globalRevealLimit = Math.floor(completedTasks / STARS_PER_REVEAL);
@@ -31,18 +22,22 @@ export function useConstellationProgress(completedTasks: number): ConstellationP
       const revealedStarCount = Math.min(starsInThis, revealedSoFar);
       runningStarCount += starsInThis;
 
-      const connectionsReady = completedTasks >= constellation.connectAt;
+      // show connections once 2+ stars in this constellation are visible
+      const connectionsReady = revealedStarCount >= 2;
       const revealedConnections = connectionsReady
         ? constellation.connections.filter(
             ([a, b]) => a < revealedStarCount && b < revealedStarCount
           )
         : [];
 
+      // unlocked = all stars revealed
+      const unlocked = revealedStarCount >= starsInThis;
+
       return {
         constellation,
         revealedStarCount,
         revealedConnections,
-        unlocked: completedTasks >= constellation.unlockAt,
+        unlocked,
       };
     });
   }, [completedTasks]);

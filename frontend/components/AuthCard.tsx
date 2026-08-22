@@ -15,7 +15,7 @@ export default function AuthCard({ children }: AuthCardProps) {
         width: '100%',
         maxWidth: 400,
         margin: '0 auto',
-        padding: '40px 36px',
+        padding: 'clamp(24px, 5vw, 40px) clamp(20px, 5vw, 36px)',
         background: 'rgba(255, 255, 255, 0.82)',
         backdropFilter: 'blur(16px) saturate(140%)',
         WebkitBackdropFilter: 'blur(16px) saturate(140%)',
@@ -29,34 +29,25 @@ export default function AuthCard({ children }: AuthCardProps) {
   );
 }
 
-/* ── Brand mark ── */
 export function NagareBrand() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 28 }}>
-      {/* Droplet SVG */}
-      <svg width="26" height="30" viewBox="0 0 26 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M13 2C13 2 3 11.5 3 18.5C3 23.747 7.477 28 13 28C18.523 28 23 23.747 23 18.5C23 11.5 13 2 13 2Z"
-          fill="url(#droplet-fill)"
-          fillOpacity="0.85"
-        />
-        <path
-          d="M16 23C16 23 19.5 20.5 19.5 17.5"
-          stroke="white"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          opacity="0.6"
-        />
+      {/* River SVG — wider flowing lines */}
+      <svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="droplet-fill" x1="3" y1="2" x2="23" y2="28" gradientUnits="userSpaceOnUse">
+          <linearGradient id="river-fill" x1="0" y1="0" x2="36" y2="28" gradientUnits="userSpaceOnUse">
             <stop stopColor="#AFA9EC" />
             <stop offset="1" stopColor="#85B7EB" />
           </linearGradient>
         </defs>
+        <path d="M1 5 C5 3, 10 7, 16 6 C22 5, 27 2, 33 4" stroke="url(#river-fill)" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.5" />
+        <path d="M1 11 C6 9, 12 14, 18 13 C24 12, 28 8, 34 10" stroke="url(#river-fill)" strokeWidth="2.8" strokeLinecap="round" fill="none" opacity="0.75" />
+        <path d="M1 18 C7 15, 13 20, 19 19 C25 18, 29 14, 35 17" stroke="url(#river-fill)" strokeWidth="3.2" strokeLinecap="round" fill="none" />
+        <path d="M3 24 C8 22, 14 26, 20 25 C26 24, 30 21, 35 23" stroke="url(#river-fill)" strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.6" />
       </svg>
       <span style={{
         fontFamily: "'DM Serif Display', Georgia, serif",
-        fontSize: '1.5rem',
+        fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
         fontWeight: 400,
         letterSpacing: '-0.02em',
         color: '#1C1A2E',
@@ -67,7 +58,6 @@ export function NagareBrand() {
   );
 }
 
-/* ── Reusable field ── */
 interface FieldProps {
   label: string;
   id: string;
@@ -106,16 +96,15 @@ export function Field({ label, id, type = 'text', placeholder, value, onChange, 
         style={{
           width: '100%',
           padding: '11px 14px',
-          fontSize: '0.9375rem',
+          fontSize: 'clamp(0.875rem, 3vw, 0.9375rem)',
           fontFamily: "'Inter', sans-serif",
           color: '#1C1A2E',
           background: 'rgba(28, 26, 46, 0.03)',
-          border: error
-            ? '0.5px solid #F0997B'
-            : '0.5px solid rgba(28, 26, 46, 0.14)',
+          border: error ? '0.5px solid #F0997B' : '0.5px solid rgba(28, 26, 46, 0.14)',
           borderRadius: 10,
           outline: 'none',
           transition: 'border-color 0.2s, box-shadow 0.2s',
+          boxSizing: 'border-box',
         }}
         onFocus={e => {
           e.target.style.borderColor = 'rgba(123, 110, 232, 0.5)';
@@ -133,7 +122,6 @@ export function Field({ label, id, type = 'text', placeholder, value, onChange, 
   );
 }
 
-/* ── Primary button ── */
 interface BtnProps {
   children: React.ReactNode;
   onClick: () => void;
@@ -149,7 +137,7 @@ export function PrimaryBtn({ children, onClick, loading }: BtnProps) {
         width: '100%',
         marginTop: 6,
         padding: '12px',
-        fontSize: '0.9375rem',
+        fontSize: 'clamp(0.875rem, 3vw, 0.9375rem)',
         fontFamily: "'Inter', sans-serif",
         fontWeight: 500,
         color: '#fff',
@@ -169,7 +157,6 @@ export function PrimaryBtn({ children, onClick, loading }: BtnProps) {
   );
 }
 
-/* ── Switch link ── */
 interface SwitchPromptProps {
   text: string;
   linkLabel: string;
@@ -181,7 +168,7 @@ export function SwitchPrompt({ text, linkLabel, onLink }: SwitchPromptProps) {
     <p style={{
       marginTop: 20,
       textAlign: 'center',
-      fontSize: '0.8125rem',
+      fontSize: 'clamp(0.75rem, 2.5vw, 0.8125rem)',
       color: '#A09DB8',
     }}>
       {text}{' '}
@@ -191,7 +178,7 @@ export function SwitchPrompt({ text, linkLabel, onLink }: SwitchPromptProps) {
           background: 'none',
           border: 'none',
           cursor: 'pointer',
-          fontSize: '0.8125rem',
+          fontSize: 'clamp(0.75rem, 2.5vw, 0.8125rem)',
           fontFamily: "'Inter', sans-serif",
           fontWeight: 500,
           color: '#7B6EE8',

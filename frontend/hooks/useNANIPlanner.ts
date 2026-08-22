@@ -1,7 +1,7 @@
 "use client";
-
 import { useState, useCallback } from "react";
-import type { NANIProcessResult } from "@/types/task";
+import { api } from "@/services/api";
+import type { NANIProcessResult } from "@/types";
 
 const NANI_INSIGHTS = [
   "I noticed your evening is a little crowded. Perhaps one task belongs in tomorrow's flow.",
@@ -16,14 +16,43 @@ export function useNANIPlanner() {
   const [processing, setProcessing] = useState(false);
   const [currentInsight, setCurrentInsight] = useState(NANI_INSIGHTS[0]);
 
-  const processInput = useCallback(
+  const processNaturalLanguage = useCallback(
     async (text: string): Promise<NANIProcessResult> => {
       setProcessing(true);
       try {
-        // POST /api/v1/NANI/process
-        // For now: local NLP parsing. Replace with API call.
-        await new Promise((r) => setTimeout(r, 400));
-        return parseNaturalLanguage(text);
+        const { data } = await api.post(
+          "/orda/process",
+          { message: text },
+          {
+            headers: {
+              Authorization: api.defaults.headers.common
+                .Authorization as string,
+            },
+          },
+        );
+
+        // Map backend response to NANIProcessResult
+        const actionData = data?.data ?? {};
+        return {
+          title: text,
+          priority: actionData?.priority ?? "medium",
+          state: "waiting",
+          category: "Study",
+          constellation: "The Scholar",
+          deadline: actionData?.deadline ?? new Date().toISOString(),
+          duration: actionData?.estimated_duration_minutes
+            ? `${actionData.estimated_duration_minutes}m`
+            : "60m",
+          energy: "Medium",
+          segment: "afternoon",
+          notes: data?.summary ?? "",
+          insight:
+            data?.summary ??
+            NANI_INSIGHTS[Math.floor(Math.random() * NANI_INSIGHTS.length)],
+        };
+      } catch {
+        // Fall back to local parsing if API fails
+        return localParse(text);
       } finally {
         setProcessing(false);
       }
@@ -36,116 +65,41 @@ export function useNANIPlanner() {
     setCurrentInsight(NANI_INSIGHTS[idx]);
   }, []);
 
-  return { processInput, processing, currentInsight, rotateInsight };
+  return {
+    processNaturalLanguage,
+    processInput: processNaturalLanguage,
+    processing,
+    isProcessing: processing,
+    currentInsight,
+    rotateInsight,
+  };
 }
 
-function parseNaturalLanguage(text: string): NANIProcessResult {
+function localParse(text: string): NANIProcessResult {
   const lower = text.toLowerCase();
-
-  // Segment
   let segment: NANIProcessResult["segment"] = "afternoon";
   if (lower.includes("tonight") || lower.includes("evening"))
     segment = "evening";
   else if (lower.includes("morning") || /\b[89](\s|am|:)/.test(lower))
     segment = "morning";
 
-  // Deadline
-  let deadline = "This Week";
-  if (lower.includes("tonight")) deadline = "Tonight";
-  else if (lower.includes("tomorrow")) deadline = "Tomorrow";
-  else if (lower.includes("friday")) deadline = "Friday";
-  else if (lower.includes("weekend")) deadline = "This Weekend";
-  else if (lower.includes("today")) deadline = "Today";
-
-  // Duration
-  let duration = "1h";
-  const dMatch = text.match(/(\d+)\s*(hour|hr|h|minute|min)\b/i);
-  if (dMatch) {
-    const isHour = dMatch[2].toLowerCase().startsWith("h");
-    duration = dMatch[1] + (isHour ? "h" : "m");
-  }
-
-  // Priority
   let priority: NANIProcessResult["priority"] = "medium";
-  if (
-    lower.includes("urgent") ||
-    lower.includes("important") ||
-    lower.includes("deadline")
-  )
+  if (lower.includes("urgent") || lower.includes("important"))
     priority = "critical";
-  else if (
-    lower.includes("hackathon") ||
-    lower.includes("exam") ||
-    lower.includes("high")
-  )
-    priority = "high";
-  else if (
-    lower.includes("low") ||
-    lower.includes("optional") ||
-    lower.includes("maybe")
-  )
-    priority = "low";
-
-  // Category + Constellation
-  let category: NANIProcessResult["category"] = "Study";
-  let constellation: NANIProcessResult["constellation"] = "The Scholar";
-  if (
-    lower.includes("project") ||
-    lower.includes("build") ||
-    lower.includes("auth") ||
-    lower.includes("module") ||
-    lower.includes("demo") ||
-    lower.includes("hackathon")
-  ) {
-    category = "Projects";
-    constellation = "The Builder";
-  } else if (
-    lower.includes("creative") ||
-    lower.includes("design") ||
-    lower.includes("brainstorm")
-  ) {
-    category = "Creative Work";
-    constellation = "The Dreamer";
-  } else if (lower.includes("explore") || lower.includes("research")) {
-    category = "Exploration";
-    constellation = "The Explorer";
-  } else if (
-    lower.includes("habit") ||
-    lower.includes("workout") ||
-    lower.includes("meditat") ||
-    lower.includes("walk")
-  ) {
-    category = "Habits";
-    constellation = "The Guardian";
-  }
-
-  // Energy
-  let energy: NANIProcessResult["energy"] = "Medium";
-  if (priority === "critical" || priority === "high") energy = "High";
-  if (priority === "low") energy = "Low";
-
-  // Clean title
-  const title =
-    text
-      .replace(
-        /\b(tonight|tomorrow|this week|this weekend|friday|today|evening|morning|afternoon)\b/gi,
-        "",
-      )
-      .replace(/\d+\s*(hour|hr|h|minute|min)\b/gi, "")
-      .replace(/\s+/g, " ")
-      .trim() || text.trim();
+  else if (lower.includes("high")) priority = "high";
+  else if (lower.includes("low")) priority = "low";
 
   return {
-    title,
+    title: text.trim(),
     priority,
     state: "waiting",
-    category,
-    constellation,
-    deadline,
-    duration,
-    energy,
+    category: "Study",
+    constellation: "The Scholar",
+    deadline: new Date().toISOString(),
+    duration: "60m",
+    energy: "Medium",
     segment,
     notes: "",
-    insight: NANI_INSIGHTS[Math.floor(Math.random() * NANI_INSIGHTS.length)],
+    insight: NANI_INSIGHTS[0],
   };
 }

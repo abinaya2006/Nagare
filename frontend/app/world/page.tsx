@@ -1,20 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
-import ConstellationWorld from "@/components/world/ConstellationWorld";
 import { useNaniSidebar } from "@/components/providers/NaniProvider";
-import { api } from "@/services/api";
+import ConstellationWorld from "@/components/world/ConstellationWorld";
+import { useTasks } from "@/contexts/TaskContext";
 
 export default function WorldPage() {
   const { open: openNani } = useNaniSidebar();
-  const [completedTasks, setCompletedTasks] = useState(0);
+  const { tasks } = useTasks();
 
-  useEffect(() => {
-    api.get<{ tasks: any[] }>("/tasks?status=completed").then((res) => {
-      setCompletedTasks(res.data.tasks.length);
-    }).catch(() => {
-      // silently fall back to 0
-    });
-  }, []);
+  // ✅ match actual task status field and value
+  const completedCount = tasks.filter((t) => t.state === "resolved").length;
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden p-4 sm:p-6">
@@ -28,7 +22,7 @@ export default function WorldPage() {
       </header>
       <div className="flex-1 min-h-0">
         <ConstellationWorld
-          initialCompletedTasks={completedTasks}
+          completedTasks={completedCount} // ✅ correct prop name
           onOpenNaniChat={openNani}
         />
       </div>

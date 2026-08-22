@@ -1,7 +1,13 @@
-'use client';
+"use client";
 
-import { motion, useMotionValue, useTransform, useAnimation, type PanInfo } from 'framer-motion';
-import { useState, useRef } from 'react';
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  useAnimation,
+  type PanInfo,
+} from "framer-motion";
+import { useState, useRef } from "react";
 
 interface SwipeOptionProps {
   options: string[];
@@ -18,7 +24,11 @@ interface SwipeOptionProps {
  * Selected card slides slightly right and glows.
  */
 export default function SwipeOption({
-  options, selected, onSelect, accentColor, accentBg,
+  options,
+  selected,
+  onSelect,
+  accentColor,
+  accentBg,
 }: SwipeOptionProps) {
   const [activeCard, setActiveCard] = useState(selected ?? 0);
 
@@ -26,7 +36,11 @@ export default function SwipeOption({
   // We keep it simple: vertical list for predictability across screen sizes,
   // each option is a swipeable-feeling pill with spring physics on select.
   return (
-    <div className="flex flex-col gap-3 w-full" role="listbox" aria-label="Select one option">
+    <div
+      className="flex flex-col gap-3 w-full"
+      role="listbox"
+      aria-label="Select one option"
+    >
       {options.map((opt, i) => (
         <OptionCard
           key={i}
@@ -54,12 +68,19 @@ interface OptionCardProps {
   onSelect: () => void;
 }
 
-function OptionCard({ label, index, isSelected, accentColor, accentBg, onSelect }: OptionCardProps) {
+function OptionCard({
+  label,
+  index,
+  isSelected,
+  accentColor,
+  accentBg,
+  onSelect,
+}: OptionCardProps) {
   const x = useMotionValue(0);
   const background = useTransform(
     x,
     [-40, 0, 40],
-    [`${accentBg}`, 'rgba(255,255,255,0.7)', `${accentBg}`]
+    [`${accentBg}`, "rgba(255,255,255,0.7)", `${accentBg}`],
   );
 
   function handleDragEnd(_: unknown, info: PanInfo) {
@@ -78,35 +99,36 @@ function OptionCard({ label, index, isSelected, accentColor, accentBg, onSelect 
       dragElastic={0.25}
       onDragEnd={handleDragEnd}
       onClick={onSelect}
-      style={{ x }}
-      whileTap={{ scale: 0.98 }}
-      animate={isSelected
-        ? { x: 6, transition: { type: 'spring', stiffness: 380, damping: 28 } }
-        : { x: 0 }
-      }
       className="relative flex items-center gap-3 w-full text-left rounded-2xl px-5 py-4 cursor-pointer outline-none focus-visible:ring-2"
       style={{
-        background: isSelected ? accentBg : 'rgba(255,255,255,0.72)',
-        border: `0.5px solid ${isSelected ? accentColor + '80' : 'rgba(28,26,46,0.10)'}`,
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        x,
+        background: isSelected ? accentBg : "rgba(255,255,255,0.72)",
+        border: `0.5px solid ${isSelected ? accentColor + "80" : "rgba(28,26,46,0.10)"}`,
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
         boxShadow: isSelected
           ? `0 4px 16px ${accentColor}22, 0 1px 4px rgba(0,0,0,0.05)`
-          : '0 1px 6px rgba(28,26,46,0.05)',
-        transition: 'border-color 0.2s, box-shadow 0.2s, background 0.2s',
+          : "0 1px 6px rgba(28,26,46,0.05)",
+        transition: "border-color 0.2s, box-shadow 0.2s, background 0.2s",
       }}
     >
       {/* Selection indicator */}
       <motion.div
         className="flex-shrink-0 rounded-full flex items-center justify-center"
-        animate={isSelected
-          ? { background: accentColor, borderColor: accentColor, scale: 1.1 }
-          : { background: 'transparent', borderColor: 'rgba(28,26,46,0.2)', scale: 1 }
+        animate={
+          isSelected
+            ? { background: accentColor, borderColor: accentColor, scale: 1.1 }
+            : {
+                background: "transparent",
+                borderColor: "rgba(28,26,46,0.2)",
+                scale: 1,
+              }
         }
-        transition={{ type: 'spring', stiffness: 400, damping: 24 }}
+        transition={{ type: "spring", stiffness: 400, damping: 24 }}
         style={{
-          width: 20, height: 20,
-          border: '1.5px solid rgba(28,26,46,0.2)',
+          width: 20,
+          height: 20,
+          border: "1.5px solid rgba(28,26,46,0.2)",
         }}
       >
         {isSelected && (
@@ -121,7 +143,7 @@ function OptionCard({ label, index, isSelected, accentColor, accentBg, onSelect 
 
       <span
         className="text-sm font-medium leading-snug"
-        style={{ color: isSelected ? '#1C1A2E' : '#4A4760' }}
+        style={{ color: isSelected ? "#1C1A2E" : "#4A4760" }}
       >
         {label}
       </span>

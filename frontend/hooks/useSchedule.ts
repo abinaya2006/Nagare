@@ -10,16 +10,20 @@ interface ScheduleItem {
   end_time: string;
 }
 
+function ensureUtc(dt: string): string {
+  if (dt.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(dt)) return dt;
+  return dt + "Z";
+}
+
 function toSlot(item: ScheduleItem): ScheduleSlot {
-  const start = new Date(item.start_time);
-  const end = new Date(item.end_time);
+  const start = new Date(ensureUtc(item.start_time)); // ← was new Date(item.start_time)
+  const end = new Date(ensureUtc(item.end_time));
   const diffMs = end.getTime() - start.getTime();
   const diffMins = Math.round(diffMs / 60000);
   const hours = Math.floor(diffMins / 60);
   const mins = diffMins % 60;
-  const duration = hours > 0
-    ? mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
-    : `${mins}m`;
+  const duration =
+    hours > 0 ? (mins > 0 ? `${hours}h ${mins}m` : `${hours}h`) : `${mins}m`;
   const h = start.getHours();
   const m = start.getMinutes();
   const time = `${h % 12 === 0 ? 12 : h % 12}:${m.toString().padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
@@ -42,7 +46,11 @@ function computeFlowBalance(items: ScheduleItem[]): FlowBalance {
 export function useSchedule() {
   const [slots, setSlots] = useState<ScheduleSlot[]>([]);
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]); // ← added
-  const [flowBalance, setFlowBalance] = useState<FlowBalance>({ score: 0, state: "dry", label: "No flow yet" });
+  const [flowBalance, setFlowBalance] = useState<FlowBalance>({
+    score: 0,
+    state: "dry",
+    label: "No flow yet",
+  });
   const [naniInsight, setNaniInsight] = useState<string | null>(null);
   const [todayFlow, setTodayFlow] = useState<ScheduleSlot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,19 +100,28 @@ export function useSchedule() {
     }
   }, []);
 
-  const reschedule = useCallback(async (reason: string, event: { title: string; start_time: string; end_time: string }) => {
-    try {
-      const { data } = await api.post("/schedule/reschedule", { reason, event });
-      const items: ScheduleItem[] = data?.updated_schedule ?? [];
-      setScheduleItems(items); // ← added
-      const mapped = items.map(toSlot);
-      setSlots(mapped);
-      setTodayFlow(mapped);
-      setFlowBalance(computeFlowBalance(items));
-    } catch {
-      console.error("Reschedule failed");
-    }
-  }, []);
+  const reschedule = useCallback(
+    async (
+      reason: string,
+      event: { title: string; start_time: string; end_time: string },
+    ) => {
+      try {
+        const { data } = await api.post("/schedule/reschedule", {
+          reason,
+          event,
+        });
+        const items: ScheduleItem[] = data?.updated_schedule ?? [];
+        setScheduleItems(items); // ← added
+        const mapped = items.map(toSlot);
+        setSlots(mapped);
+        setTodayFlow(mapped);
+        setFlowBalance(computeFlowBalance(items));
+      } catch {
+        console.error("Reschedule failed");
+      }
+    },
+    [],
+  );
 
   return {
     slots,

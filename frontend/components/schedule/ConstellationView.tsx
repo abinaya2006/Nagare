@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Task } from "@/types/task";
+import type { Task } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -385,7 +385,7 @@ export default function ConstellationView({
         }
 
         // Completed: draw faint cross-through
-        if (star.task.state === "completed") {
+        if (star.task.state === "resolved") {
           ctx.save();
           ctx.globalAlpha = 0.45;
           ctx.strokeStyle = "#fff";

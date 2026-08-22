@@ -2,190 +2,298 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design tokens ─────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAGARE DESIGN TOKENS
+   Light mode = :root   |   Dark mode = .dark (class strategy)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 :root {
-    /* Legacy / light surface tokens (keep for non-Nagare pages) */
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --border: 214 32% 91%;
-    --primary: 222 47% 11%;
-    --muted: 210 40% 96%;
+  /* ── Surfaces ── */
+  --bg-base:        #FCFCFF;        /* page background      */
+  --bg-raised:      #FFFFFF;        /* cards, panels        */
+  --bg-overlay:     rgba(255,255,255,0.72); /* glass panels  */
+  --bg-subtle:      rgba(232,225,255,0.35); /* hover states  */
 
-    /* ── Nagare palette ── */
-    --nagare-void: #07051a; /* deep space background */
-    --nagare-deep: #0a0823; /* slightly lighter void */
-    --nagare-surface: rgba(255, 255, 255, 0.04);
-    --nagare-surface-md: rgba(255, 255, 255, 0.07);
-    --nagare-surface-lg: rgba(255, 255, 255, 0.11);
-    --nagare-border: rgba(255, 255, 255, 0.08);
-    --nagare-border-glow: rgba(167, 139, 250, 0.22);
+  /* ── Text ── */
+  --text-primary:   #2F3142;
+  --text-secondary: #6D7088;
+  --text-muted:     #9C9AB8;
 
-    /* Star colors */
-    --nagare-violet: #a78bfa;
-    --nagare-blue: #60a5fa;
-    --nagare-pink: #f9a8d4;
-    --nagare-teal: #34d399;
-    --nagare-gold: #fbbf24;
+  /* ── Border ── */
+  --border-soft:    rgba(174,166,219,0.25);
+  --border-medium:  rgba(174,166,219,0.45);
 
-    /* Priority colors */
-    --priority-critical: #fb7185; /* soft coral */
-    --priority-high: #fbbf24; /* warm gold  */
-    --priority-medium: #a78bfa; /* lavender   */
-    --priority-low: #60a5fa; /* sky blue   */
-    --priority-done: #94a3b8; /* silver mist */
+  /* ── Brand palette (same both modes) ── */
+  --lavender:       #E8E1FF;
+  --river-blue:     #DDEEFF;
+  --memory-gold:    #FFF4C7;
+  --warm-peach:     #FFE8D6;
 
-    /* Typography */
-    --font-display: "Inter", "SF Pro Display", system-ui, sans-serif;
+  /* ── Glass ── */
+  --glass-bg:       rgba(255,255,255,0.55);
+  --glass-border:   rgba(232,225,255,0.6);
+  --glass-blur:     blur(20px);
 
-    /* Motion */
-    --spring-snappy: cubic-bezier(0.22, 1, 0.36, 1);
-    --spring-gentle: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* ── Nagare dark surface tokens (used by schedule/world pages) ── */
+  --nagare-void:    #07051a;
+  --nagare-deep:    #0a0823;
+  --nagare-surface: rgba(255,255,255,0.04);
+  --nagare-surface-md: rgba(255,255,255,0.07);
+  --nagare-surface-lg: rgba(255,255,255,0.11);
+  --nagare-border:  rgba(255,255,255,0.08);
+  --nagare-border-glow: rgba(167,139,250,0.22);
+
+  /* ── Star/accent colors ── */
+  --nagare-violet:  #a78bfa;
+  --nagare-blue:    #60a5fa;
+  --nagare-pink:    #f9a8d4;
+  --nagare-teal:    #34d399;
+  --nagare-gold:    #fbbf24;
+
+  /* ── Priority ── */
+  --priority-critical: #fb7185;
+  --priority-high:     #fbbf24;
+  --priority-medium:   #a78bfa;
+  --priority-low:      #60a5fa;
+  --priority-done:     #94a3b8;
+
+  /* ── Shadows ── */
+  --shadow-soft:    0 8px 32px rgba(174,166,219,0.18);
+  --shadow-card:    0 2px 12px rgba(174,166,219,0.12);
+
+  /* ── Legacy tokens (keep for non-Nagare pages) ── */
+  --border:         214 32% 91%;
+  --primary:        222 47% 11%;
+  --muted:          210 40% 96%;
+
+  --font-display: "Inter", "SF Pro Display", system-ui, sans-serif;
+  --spring-snappy: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring-gentle: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ─── Base reset ─────────────────────────────────────────────────────────── */
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
+/* ── Dark mode overrides ────────────────────────────────────────────────── */
+.dark {
+  /* Surfaces */
+  --bg-base:        #07051a;
+  --bg-raised:      #0d0b26;
+  --bg-overlay:     rgba(13,11,38,0.78);
+  --bg-subtle:      rgba(167,139,250,0.08);
+
+  /* Text */
+  --text-primary:   rgba(248,245,255,0.92);
+  --text-secondary: rgba(180,170,220,0.8);
+  --text-muted:     rgba(140,130,185,0.65);
+
+  /* Border */
+  --border-soft:    rgba(255,255,255,0.07);
+  --border-medium:  rgba(255,255,255,0.12);
+
+  /* Brand palette — slightly softer in dark */
+  --lavender:       rgba(167,139,250,0.15);
+  --river-blue:     rgba(96,165,250,0.15);
+  --memory-gold:    rgba(251,191,36,0.15);
+  --warm-peach:     rgba(251,146,60,0.1);
+
+  /* Glass */
+  --glass-bg:       rgba(13,11,38,0.65);
+  --glass-border:   rgba(255,255,255,0.08);
+  --glass-blur:     blur(20px);
+
+  /* Shadows */
+  --shadow-soft:    0 8px 32px rgba(0,0,0,0.4);
+  --shadow-card:    0 2px 12px rgba(0,0,0,0.3);
+
+  /* Legacy */
+  --background:     240 10% 4%;
+  --foreground:     0 0% 95%;
+  --border:         240 5% 15%;
+  --primary:        0 0% 95%;
+  --muted:          240 5% 15%;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE RESET
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
 
 html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 body {
-    margin: 0;
-    font-family: var(--font-display);
-    /* Nagare pages override this; non-Nagare pages get the light default */
-    background: hsl(var(--background));
-    color: hsl(var(--foreground));
+  margin: 0;
+  font-family: var(--font-display);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-a {
-    color: inherit;
-    text-decoration: none;
-}
+a { color: inherit; text-decoration: none; }
+img, video { display: block; max-width: 100%; }
 
-img,
-video {
-    display: block;
-    max-width: 100%;
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAGARE APP SHELL
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ─── Nagare app shell ───────────────────────────────────────────────────── */
-/* Applied to the root layout wrapper that contains sidebar + page */
 .nagare-shell {
-    display: flex;
-    min-height: 100vh;
-    background: var(--nagare-void);
-    color: rgba(248, 245, 255, 0.92);
-    font-family: var(--font-display);
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* The main content area beside the sidebar */
 .nagare-main {
-    flex: 1;
-    min-width: 0;
-    position: relative;
-    overflow-x: hidden;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow-x: hidden;
 }
 
-/* ─── Schedule / Flow Planner page background ────────────────────────────── */
-/* This gives the page its deep dreamlike sky — replaces the white default */
+/* ── Schedule page ── keeps its own deep sky both modes */
 .schedule-page {
-    min-height: 100vh;
-    background:
-        radial-gradient(
-            ellipse 80% 50% at 20% 0%,
-            rgba(88, 28, 135, 0.18) 0%,
-            transparent 60%
-        ),
-        radial-gradient(
-            ellipse 60% 40% at 80% 100%,
-            rgba(15, 23, 70, 0.35) 0%,
-            transparent 60%
-        ),
-        radial-gradient(
-            ellipse 100% 80% at 50% 50%,
-            rgba(7, 5, 26, 1) 0%,
-            transparent 100%
-        ),
-        var(--nagare-void);
-    color: rgba(248, 245, 255, 0.92);
-    font-family: var(--font-display);
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(88,28,135,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(15,23,70,0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 80% at 50% 50%, rgba(7,5,26,1) 0%, transparent 100%),
+    var(--nagare-void);
+  color: rgba(248,245,255,0.92);
+  font-family: var(--font-display);
 }
 
-/* ─── Glass utility classes ──────────────────────────────────────────────── */
-/* Existing — keep intact */
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLASS UTILITIES  — adapt to theme via CSS vars
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Main glass card — light frosted / dark smoked */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+}
+
 .glass-strong {
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-left: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow: -8px 0 32px rgba(140, 140, 200, 0.15);
+  background: var(--bg-overlay);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--border-medium);
+  box-shadow: var(--shadow-soft);
 }
 
-/* Nagare dark glass — used for cards, drawers, sidebars */
+/* Always-dark glass — schedule/world drawers */
 .glass-dark {
-    background: rgba(10, 8, 35, 0.65);
-    backdrop-filter: blur(18px) saturate(1.3);
-    -webkit-backdrop-filter: blur(18px) saturate(1.3);
-    border: 1px solid var(--nagare-border);
+  background: rgba(10,8,35,0.65);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  border: 1px solid var(--nagare-border);
 }
 
-/* Nagare tinted glass — used for inputs, chips */
 .glass-tint {
-    background: var(--nagare-surface-md);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--nagare-border);
+  background: var(--nagare-surface-md);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--nagare-border);
 }
 
-/* Glow border on hover */
 .glass-glow:hover {
-    border-color: var(--nagare-border-glow);
-    box-shadow: 0 0 20px rgba(167, 139, 250, 0.15);
+  border-color: var(--nagare-border-glow);
+  box-shadow: 0 0 20px rgba(167,139,250,0.15);
 }
 
-/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
-::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+/* ── Semantic surface helpers ── */
+.surface {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-card);
 }
-::-webkit-scrollbar-track {
-    background: transparent;
-}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DASHBOARD LIGHT → DARK ADAPTATIONS
+   Target Tailwind classes that use hardcoded light values
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* bg-gradient-to-br from-lavender via-cloud to-sky (Schedule/Focus orbs) */
+.dark .from-lavender { --tw-gradient-from: rgba(167,139,250,0.25); }
+.dark .via-cloud     { --tw-gradient-via:  rgba(13,11,38,0.5); }
+.dark .to-sky        { --tw-gradient-to:   rgba(96,165,250,0.2); }
+
+/* text-ink / text-ink-soft — map to CSS vars */
+.text-ink      { color: var(--text-primary); }
+.text-ink-soft { color: var(--text-secondary); }
+
+/* bg-white/xx — tone down in dark */
+.dark .bg-white\/55 { background-color: rgba(255,255,255,0.06) !important; }
+.dark .bg-white\/75 { background-color: rgba(255,255,255,0.09) !important; }
+.dark .bg-white\/80 { background-color: rgba(255,255,255,0.07) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-    background: rgba(167, 139, 250, 0.25);
-    border-radius: 4px;
+  background: rgba(167,139,250,0.25);
+  border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(167, 139, 250, 0.45);
-}
+::-webkit-scrollbar-thumb:hover { background: rgba(167,139,250,0.45); }
 
-/* ─── Focus visible ──────────────────────────────────────────────────────── */
+/* ── Focus visible ── */
 :focus-visible {
-    outline: 2px solid rgba(167, 139, 250, 0.6);
-    outline-offset: 2px;
-    border-radius: 4px;
+  outline: 2px solid rgba(167,139,250,0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-/* ─── Selection ──────────────────────────────────────────────────────────── */
+/* ── Selection ── */
 ::selection {
-    background: rgba(139, 92, 246, 0.35);
-    color: #fff;
+  background: rgba(139,92,246,0.35);
+  color: #fff;
 }
 
-/* ─── Reduced motion ─────────────────────────────────────────────────────── */
+/* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-    }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* ── PATCH: replace the nagare-shell rule in globals.css ──
+   The old rule forced color: rgba(248,245,255,0.92) always,
+   making light-mode text invisible. Now it inherits from CSS vars. */
+
+.nagare-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-base);
+  color: var(--text-primary);           /* light: #2F3142 | dark: rgba(248,245,255,0.92) */
+  font-family: var(--font-display);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Also fix the glass utility — was transparent in dark because bg-white/0.55 is invisible */
+.glass {
+  background: var(--glass-bg);          /* light: rgba(255,255,255,0.55) | dark: rgba(13,11,38,0.65) */
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border); /* light: rgba(232,225,255,0.6) | dark: rgba(255,255,255,0.08) */
+  box-shadow: var(--shadow-card);
+}
+
+/* glass-strong — sidebar */
+.glass-strong {
+  background: var(--bg-overlay);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-right: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
 }

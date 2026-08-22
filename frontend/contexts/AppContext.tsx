@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 import type { User, Task, AppPage } from "@/types";
+import { api } from "@/services/api";
 
 interface AppContextValue {
   page: AppPage;
@@ -20,45 +21,73 @@ interface AppContextValue {
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
-
 const MOCK_TASKS: Task[] = [
   {
     id: "1",
     title: "Review quarterly goals",
-    category: "focus",
-    done: false,
-    dueToday: true,
+    category: "Study",
+    priority: "medium",
+    state: "waiting",
+    constellation: "The Scholar",
+    deadline: new Date().toISOString(),
+    duration: "30m",
+    energy: "Medium",
+    segment: "morning",
+    createdAt: new Date().toISOString(),
   },
   {
     id: "2",
     title: "Team standup notes",
-    category: "admin",
-    done: true,
-    dueToday: true,
+    category: "Projects",
+    priority: "medium",
+    state: "resolved",
+    constellation: "The Builder",
+    deadline: new Date().toISOString(),
+    duration: "15m",
+    energy: "Low",
+    segment: "morning",
+    createdAt: new Date().toISOString(),
   },
   {
     id: "3",
     title: "Write feature brief",
-    category: "creative",
-    done: false,
-    dueToday: true,
+    category: "Creative Work",
+    priority: "medium",
+    state: "waiting",
+    constellation: "The Dreamer",
+    deadline: new Date().toISOString(),
+    duration: "45m",
+    energy: "High",
+    segment: "afternoon",
+    createdAt: new Date().toISOString(),
   },
   {
     id: "4",
     title: "Evening walk",
-    category: "health",
-    done: false,
-    dueToday: true,
+    category: "Habits",
+    priority: "low",
+    state: "waiting",
+    constellation: "The Guardian",
+    deadline: new Date().toISOString(),
+    duration: "30m",
+    energy: "Low",
+    segment: "evening",
+    createdAt: new Date().toISOString(),
   },
   {
     id: "5",
     title: "Reply to Priya",
-    category: "social",
-    done: false,
-    dueToday: false,
+    category: "Exploration",
+    priority: "low",
+    state: "waiting",
+    constellation: "The Explorer",
+    deadline: new Date().toISOString(),
+    duration: "10m",
+    energy: "Low",
+    segment: "afternoon",
+    createdAt: new Date().toISOString(),
   },
 ];
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [page, setPage] = useState<AppPage>("login");
 
@@ -71,23 +100,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const response = await fetch("http://localhost:8000/api/v1/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.detail || "Login failed");
-    }
+    const { data } = await api.post("/auth/login", { email, password });
 
     const newUser: User = {
       id: data.user_id,
@@ -108,23 +121,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const signup = useCallback(
     async (name: string, email: string, password: string) => {
-      const response = await fetch("http://localhost:8000/api/v1/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Signup failed");
-      }
+      const { data } = await api.post("/auth/signup", { email, password });
 
       const newUser: User = {
         id: data.user_id,

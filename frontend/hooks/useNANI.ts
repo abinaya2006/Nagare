@@ -1,6 +1,6 @@
 "use client";
-
 import { useCallback, useEffect, useState } from "react";
+import { api } from "@/services/api";
 import type { NaniMessage } from "@/types";
 
 interface UseNaniResult {
@@ -11,48 +11,24 @@ interface UseNaniResult {
   refreshHistory: () => Promise<void>;
 }
 
-/**
- * Handles conversation state for NANI, the ambient AI companion.
- * Talks to GET /api/v1/NANI/history and POST /api/v1/NANI/process.
- */
 export function useNANI(): UseNaniResult {
-  const [messages, setMessages] = useState<NaniMessage[]>([]);
+  const [messages, setMessages] = useState<NaniMessage[]>([
+    {
+      id: "welcome",
+      role: "nani",
+      content: "I'm here. Whenever you're ready, tell me what's drifting through your mind.",
+      timestamp: new Date().toISOString(),
+    },
+  ]);
   const [isThinking, setIsThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refreshHistory = useCallback(async () => {
-    try {
-      const res = await fetch("/api/v1/NANI/history");
-      if (!res.ok) throw new Error("Failed to load history");
-      const data = await res.json();
-      if (Array.isArray(data?.messages)) {
-        setMessages(data.messages);
-      }
-    } catch {
-      // Quietly fall back to local-only conversation if history is unavailable
-      setMessages((prev) =>
-        prev.length
-          ? prev
-          : [
-              {
-                id: "welcome",
-                role: "nani",
-                content:
-                  "I'm here. Whenever you're ready, tell me what's drifting through your mind.",
-                timestamp: new Date().toISOString(),
-              },
-            ]
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshHistory();
-  }, [refreshHistory]);
+  const refreshHistory = useCallback(async () => {}, []);
 
   const sendMessage = useCallback(async (content: string) => {
     const trimmed = content.trim();
     if (!trimmed) return;
+    console.log('🔑 Token:', api.defaults.headers.common.Authorization ?? 'NONE');
 
     const userMessage: NaniMessage = {
       id: `local-${Date.now()}`,
@@ -60,29 +36,27 @@ export function useNANI(): UseNaniResult {
       content: trimmed,
       timestamp: new Date().toISOString(),
     };
-
     setMessages((prev) => [...prev, userMessage]);
     setIsThinking(true);
     setError(null);
 
     try {
-      const res = await fetch("/api/v1/NANI/process", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed }),
+      const { data } = await api.post("/orda/process", { message: trimmed }, {
+        headers: { Authorization: api.defaults.headers.common.Authorization }
       });
-
-      if (!res.ok) throw new Error("NANI could not respond");
-
-      const data = await res.json();
+      console.log('🤖 NANI response:', data);
+      console.log('💬 Reply content:', data?.summary);
       const reply: NaniMessage = {
-        id: data?.id ?? `nani-${Date.now()}`,
+        id: `nani-${Date.now()}`,
         role: "nani",
-        content: data?.reply ?? "I'm holding that thought with you.",
+        content: data?.summary ?? "I'm holding that thought with you.",
         timestamp: new Date().toISOString(),
       };
-
-      setMessages((prev) => [...prev, reply]);
+      setMessages((prev) => {
+        const updated = [...prev, reply];
+        console.log('📨 Messages:', updated);
+        return updated;
+      });
     } catch {
       setError("NANI is drifting just out of reach right now. Try again soon.");
     } finally {

@@ -4,13 +4,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X, Clock, Calendar, CheckCircle2 } from "lucide-react";
 import type { Task } from "@/types";
 
+// line 9 — fix the type
 interface TaskDetailModalProps {
   task: Task | null;
   onClose: () => void;
-  onComplete: (taskId: string) => void;
+  onComplete: (taskId: string) => Promise<void>; // ← was just void
 }
 
 const PRIORITY_LABEL: Record<Task["priority"], string> = {
+  critical: "Critical priority · red",
   high: "High priority · coral",
   medium: "Medium priority · gold",
   low: "Low priority · lavender",
@@ -34,7 +36,11 @@ function formatDeadline(iso: string) {
  * A gentle, glassy modal that surfaces a single task's details. Framed as a
  * "thought card" rather than a task ticket - calm wording, generous space.
  */
-export default function TaskDetailModal({ task, onClose, onComplete }: TaskDetailModalProps) {
+export default function TaskDetailModal({
+  task,
+  onClose,
+  onComplete,
+}: TaskDetailModalProps) {
   return (
     <AnimatePresence>
       {task && (
@@ -73,9 +79,14 @@ export default function TaskDetailModal({ task, onClose, onComplete }: TaskDetai
             </button>
 
             <p className="mb-1 text-xs uppercase tracking-[0.2em] text-ink-soft">
-              {task.completed ? "Settled thought" : PRIORITY_LABEL[task.priority]}
+              {task.state === "resolved"
+                ? "Settled thought"
+                : PRIORITY_LABEL[task.priority]}
             </p>
-            <h2 id="task-modal-title" className="font-display text-2xl font-medium text-ink">
+            <h2
+              id="task-modal-title"
+              className="font-display text-2xl font-medium text-ink"
+            >
               {task.title}
             </h2>
 
@@ -86,7 +97,7 @@ export default function TaskDetailModal({ task, onClose, onComplete }: TaskDetai
               </div>
               <div className="flex items-center gap-3">
                 <Clock size={18} className="text-ink-soft" />
-                <span>About {task.estimatedDuration} minutes</span>
+                <span>About {task.duration}</span>
               </div>
             </div>
 
@@ -98,10 +109,10 @@ export default function TaskDetailModal({ task, onClose, onComplete }: TaskDetai
               >
                 Let it float
               </button>
-              {!task.completed && (
+              {task.state !== "resolved" && (
                 <button
                   type="button"
-                  onClick={() => onComplete(task.id)}
+                  onClick={() => onComplete(task.id)} // ← remove onClose() from here
                   className="flex items-center gap-2 rounded-full bg-lavglow/70 px-5 py-2.5 text-sm font-medium text-[#4f3f8a] shadow-glow-lav transition hover:bg-lavglow/90"
                 >
                   <CheckCircle2 size={16} />

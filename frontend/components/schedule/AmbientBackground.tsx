@@ -3,7 +3,15 @@
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
-export default function AmbientBackground() {
+export default function AmbientBackground({
+  flowBalance = 0,
+  orbAnimating = false,
+  isGenerating = false,
+}: {
+  flowBalance?: number;
+  orbAnimating?: boolean;
+  isGenerating?: boolean;
+} = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

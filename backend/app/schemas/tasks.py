@@ -1,14 +1,17 @@
 from datetime import datetime, time
 from enum import Enum
 from uuid import UUID
-from pydantic import BaseModel, Field, field_validator, model_validator
+
 from app.core.security import sanitize_text
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic.alias_generators import to_camel
 
 
 class Priority(str, Enum):
     low = "low"
     medium = "medium"
     high = "high"
+    critical = "critical"
 
 
 class TaskStatus(str, Enum):
@@ -29,6 +32,8 @@ def normalize_enum_value(value: str | Enum | None) -> str | Enum | None:
 
 
 class TaskBase(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
     title: str = Field(min_length=1, max_length=160)
     description: str = ""
     deadline: datetime | None = None
@@ -47,8 +52,6 @@ class TaskBase(BaseModel):
             # If Supabase sends '+00' without the minutes, add ':00' to satisfy Pydantic
             if v.endswith("+00"):
                 return v + ":00"
-            # Or if it's sending timezone data we don't need for basic time, just strip it:
-            # return v.split("+")[0].split("-")[0]
         return v
 
     @field_validator("title", "description")
@@ -69,8 +72,14 @@ class TaskBase(BaseModel):
     @model_validator(mode="after")
     def validate_fixed_time_block(self):
         if (self.fixed_start_time is None) != (self.fixed_end_time is None):
-            raise ValueError("fixed_start_time and fixed_end_time must be provided together")
-        if self.fixed_start_time and self.fixed_end_time and self.fixed_end_time <= self.fixed_start_time:
+            raise ValueError(
+                "fixed_start_time and fixed_end_time must be provided together"
+            )
+        if (
+            self.fixed_start_time
+            and self.fixed_end_time
+            and self.fixed_end_time <= self.fixed_start_time
+        ):
             raise ValueError("fixed_end_time must be after fixed_start_time")
         if self.recurrence_rule and not self.is_routine:
             raise ValueError("recurrence_rule requires is_routine to be true")
@@ -82,6 +91,8 @@ class TaskCreate(TaskBase):
 
 
 class TaskUpdate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
     title: str | None = Field(default=None, min_length=1, max_length=160)
     description: str | None = None
     deadline: datetime | None = None
@@ -92,6 +103,14 @@ class TaskUpdate(BaseModel):
     recurrence_rule: str | None = Field(default=None, max_length=500)
     fixed_start_time: time | None = None
     fixed_end_time: time | None = None
+
+    @field_validator("fixed_start_time", "fixed_end_time", mode="before")
+    @classmethod
+    def fix_supabase_time_format(cls, v):
+        if isinstance(v, str):
+            if v.endswith("+00"):
+                return v + ":00"
+        return v
 
     @field_validator("title", "description")
     @classmethod
@@ -131,4 +150,3 @@ class TaskMutationResponse(BaseModel):
 
 class TaskMessageResponse(BaseModel):
     message: str
-

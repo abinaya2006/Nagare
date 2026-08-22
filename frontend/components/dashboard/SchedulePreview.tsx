@@ -1,38 +1,20 @@
 "use client";
-
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wand2, Loader2 } from "lucide-react";
-import type { ScheduleBlock } from "@/types";
+import { useSchedule } from "@/hooks/useSchedule";
 
-interface SchedulePreviewProps {
-  initialFlow: ScheduleBlock[];
-}
-
-/**
- * Floating ribbon card showing the AI's recommended flow for the day, with
- * a gentle "Generate New Flow" action that calls the schedule API.
- */
-export default function SchedulePreview({ initialFlow }: SchedulePreviewProps) {
-  const [flow, setFlow] = useState<ScheduleBlock[]>(initialFlow);
+export default function SchedulePreview() {
+  const { slots, generateFlow, isLoading } = useSchedule();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     setError(null);
-    try {
-      const res = await fetch("/api/v1/schedule/generate", { method: "POST" });
-      if (!res.ok) throw new Error("Could not generate a new flow");
-      const data = await res.json();
-      if (Array.isArray(data?.flow)) {
-        setFlow(data.flow);
-      }
-    } catch {
-      setError("The new flow drifted away before it arrived. Try again in a moment.");
-    } finally {
-      setIsGenerating(false);
-    }
+    try { await generateFlow(); }
+    catch { setError("The flow drifted away before it arrived. Try again in a moment."); }
+    finally { setIsGenerating(false); }
   };
 
   return (
@@ -50,8 +32,11 @@ export default function SchedulePreview({ initialFlow }: SchedulePreviewProps) {
         <button
           type="button"
           onClick={handleGenerate}
-          disabled={isGenerating}
-          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-lavender to-sky px-4 py-2.5 text-sm font-medium text-ink shadow-glass transition hover:shadow-glow-lav disabled:opacity-70"
+          disabled={isGenerating || isLoading}
+          className="flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-ink shadow-glass transition hover:shadow-glow-lav disabled:opacity-70"
+          style={{
+            background: "linear-gradient(135deg, var(--lavender), var(--river-blue))",
+          }}
         >
           {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
           {isGenerating ? "Gathering thoughts…" : "Generate New Flow"}
@@ -59,25 +44,34 @@ export default function SchedulePreview({ initialFlow }: SchedulePreviewProps) {
       </div>
 
       <div className="mt-5 flex gap-3 overflow-x-auto pb-1">
+        {isLoading && <p className="text-xs text-ink-soft">Loading your flow…</p>}
         <AnimatePresence mode="popLayout">
-          {flow.map((block, i) => (
+          {!isLoading && slots.map((slot, i) => (
             <motion.div
-              key={block.id}
+              key={`${slot.taskId ?? 'slot'}-${i}`}
               layout
               initial={{ opacity: 0, scale: 0.9, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              className="flex min-w-[150px] flex-shrink-0 flex-col gap-1 rounded-2xl bg-white/55 px-4 py-3 shadow-sm backdrop-blur-sm"
+              className="flex min-w-[150px] flex-shrink-0 flex-col gap-1 rounded-2xl px-4 py-3 shadow-sm"
+              style={{
+                background: "var(--bg-overlay)",
+                border: "1px solid var(--border-soft)",
+                backdropFilter: "blur(8px)",
+              }}
             >
-              <span className="text-xs font-semibold text-ink-soft">{block.time}</span>
-              <span className="text-sm font-medium text-ink">{block.label}</span>
+              <span className="text-xs font-semibold text-ink-soft">{slot.time}</span>
+              <span className="text-sm font-medium text-ink">{slot.task}</span>
+              <span className="text-xs text-ink-soft">{slot.duration}</span>
             </motion.div>
           ))}
         </AnimatePresence>
+        {!isLoading && slots.length === 0 && (
+          <p className="text-xs text-ink-soft">No flow yet. Hit &quot;Generate New Flow&quot; to begin.</p>
+        )}
       </div>
-
-      {error && <p className="mt-3 text-xs text-coral-glow">{error}</p>}
+      {error && <p className="mt-3 text-xs" style={{ color: "var(--priority-critical)" }}>{error}</p>}
     </motion.div>
   );
 }

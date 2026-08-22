@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { CreateTaskInput } from "@/types/task";
 
 interface NANIComposerProps {
   onSubmit: (input: string) => Promise<void>;
@@ -12,10 +11,17 @@ interface NANIComposerProps {
   orbAnimating?: boolean;
 }
 
-export default function NANIComposer({ onSubmit, onRegenerate, isRegenerating, isProcessing, orbAnimating }: NANIComposerProps) {
+export default function NANIComposer({
+  onSubmit,
+  onRegenerate,
+  isRegenerating,
+  isProcessing,
+  orbAnimating,
+}: NANIComposerProps) {
   const [value, setValue] = useState("");
   const [orbFlying, setOrbFlying] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
 
   const handleSubmit = async () => {
     const text = value.trim();
@@ -30,7 +36,8 @@ export default function NANIComposer({ onSubmit, onRegenerate, isRegenerating, i
     <div
       className="fixed bottom-0 left-0 right-0 z-10 px-6 py-4"
       style={{
-        background: "linear-gradient(180deg, transparent 0%, rgba(7,11,24,0.95) 35%)",
+        background:
+          "linear-gradient(180deg, transparent 0%, rgba(7,11,24,0.95) 35%)",
         borderTop: "1px solid rgba(255,255,255,0.07)",
         backdropFilter: "blur(14px)",
       }}
@@ -39,7 +46,13 @@ export default function NANIComposer({ onSubmit, onRegenerate, isRegenerating, i
         {orbFlying && (
           <motion.div
             className="pointer-events-none absolute h-5 w-5 rounded-full"
-            style={{ background: "radial-gradient(circle, #7C6FCD, #4ECDC4)", boxShadow: "0 0 20px rgba(124,111,205,0.6)", bottom: "50%", left: "50%", zIndex: 50 }}
+            style={{
+              background: "radial-gradient(circle, #7C6FCD, #4ECDC4)",
+              boxShadow: "0 0 20px rgba(124,111,205,0.6)",
+              bottom: "50%",
+              left: "50%",
+              zIndex: 50,
+            }}
             initial={{ opacity: 1, scale: 1, x: 0, y: 0 }}
             animate={{ opacity: 0, scale: 0, x: -80, y: -140 }}
             exit={{ opacity: 0 }}
@@ -51,14 +64,31 @@ export default function NANIComposer({ onSubmit, onRegenerate, isRegenerating, i
       <div className="mx-auto max-w-3xl">
         <motion.div
           className="flex items-center gap-3 rounded-2xl px-4 py-3"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)" }}
-          whileFocusWithin={{ borderColor: "rgba(124,111,205,0.4)", background: "rgba(255,255,255,0.06)", boxShadow: "0 0 0 3px rgba(124,111,205,0.1), 0 8px 32px rgba(0,0,0,0.3)" }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          animate={
+            focused
+              ? {
+                  borderColor: "rgba(124,111,205,0.4)",
+                  background: "rgba(255,255,255,0.06)",
+                  boxShadow:
+                    "0 0 0 3px rgba(124,111,205,0.1), 0 8px 32px rgba(0,0,0,0.3)",
+                }
+              : {}
+          }
           transition={{ duration: 0.2 }}
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.09)",
+          }}
         >
           {/* NANI pulse dot */}
           <motion.div
             className="h-2 w-2 shrink-0 rounded-full"
-            style={{ background: "#7C6FCD", boxShadow: "0 0 10px rgba(124,111,205,0.6)" }}
+            style={{
+              background: "#7C6FCD",
+              boxShadow: "0 0 10px rgba(124,111,205,0.6)",
+            }}
             animate={{ scale: [1, 1.25, 1], opacity: [0.8, 1, 0.8] }}
             transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
           />
@@ -71,7 +101,11 @@ export default function NANIComposer({ onSubmit, onRegenerate, isRegenerating, i
             placeholder="What deserves attention today?"
             disabled={isProcessing}
             className="flex-1 bg-transparent text-[13.5px] outline-none"
-            style={{ color: "rgba(255,255,255,0.9)", caretColor: "#7C6FCD", fontFamily: "inherit" }}
+            style={{
+              color: "rgba(255,255,255,0.9)",
+              caretColor: "#7C6FCD",
+              fontFamily: "inherit",
+            }}
           />
 
           {/* Regenerate button */}
@@ -89,7 +123,11 @@ export default function NANIComposer({ onSubmit, onRegenerate, isRegenerating, i
             whileHover={!isRegenerating ? { scale: 1.1, opacity: 1 } : {}}
             whileTap={!isRegenerating ? { scale: 0.95 } : {}}
             animate={isRegenerating ? { rotate: 360 } : { rotate: 0 }}
-            transition={isRegenerating ? { duration: 1.2, repeat: Infinity, ease: "linear" } : { duration: 0.2 }}
+            transition={
+              isRegenerating
+                ? { duration: 1.2, repeat: Infinity, ease: "linear" }
+                : { duration: 0.2 }
+            }
           >
             ↻
           </motion.button>
@@ -114,7 +152,10 @@ export default function NANIComposer({ onSubmit, onRegenerate, isRegenerating, i
           </motion.button>
         </motion.div>
 
-        <p className="mt-2 text-center text-[11px]" style={{ color: "rgba(255,255,255,0.2)" }}>
+        <p
+          className="mt-2 text-center text-[11px]"
+          style={{ color: "rgba(255,255,255,0.2)" }}
+        >
           Try: "Study DBMS tonight for 90 minutes" · ↻ to regenerate your flow
         </p>
       </div>

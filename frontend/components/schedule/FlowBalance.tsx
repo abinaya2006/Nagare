@@ -1,12 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-
 interface FlowBalanceProps {
   score: number;
+  isLoading?: boolean;
 }
-
-export default function FlowBalance({ score }: FlowBalanceProps) {
+export default function FlowBalance({
+  score,
+  isLoading = false,
+}: FlowBalanceProps) {
   const state = score < 30 ? "dry" : score > 85 ? "turbulent" : "balanced";
   const color =
     state === "dry" ? "#82C4F8" : state === "turbulent" ? "#FF8B6B" : "#4ECDC4";

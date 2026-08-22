@@ -8,15 +8,20 @@ import type { Task } from "@/types";
 
 interface MemoryJarProps {
   tasks: Task[];
-  onCompleteTask: (taskId: string) => void;
+  onCompleteTask: (taskId: string) => Promise<void>; // already correct
 }
 
 const JAR_RADIUS = 150;
 
 export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [completing, setCompleting] = useState<string | null>(null);
   const jarRef = useRef<HTMLDivElement>(null);
-  const pendingTasks = tasks.filter((t) => !t.completed);
+
+  // Only show pending (non-resolved) tasks as orbs
+  const pendingTasks = tasks.filter(
+    (t) => t.state !== "resolved" && t.id !== completing,
+  );
   const orbIds = pendingTasks.map((t) => t.id);
   const { positions, setOrbPosition, releaseOrb } = useTaskPhysics(
     orbIds,
@@ -27,7 +32,6 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
   const pendingCount = pendingTasks.length;
   const allDone = pendingCount === 0;
 
-  // Clamp drag position inside jar radius
   const handleDrag = (id: string, pos: { x: number; y: number }) => {
     const dist = Math.sqrt(pos.x * pos.x + pos.y * pos.y);
     const orbR = 30;
@@ -40,6 +44,18 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
       });
     } else {
       setOrbPosition(id, pos);
+    }
+  };
+
+  const handleComplete = async (taskId: string) => {
+    // Close modal immediately
+    setActiveTask(null);
+    // Mark as completing so orb disappears from jar instantly
+    setCompleting(taskId);
+    try {
+      await onCompleteTask(taskId);
+    } finally {
+      setCompleting(null);
     }
   };
 
@@ -82,7 +98,6 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
         }}
         aria-hidden="true"
       >
-        {/* liquid fill at the bottom */}
         <motion.div
           className="absolute bottom-0 left-0 right-0"
           animate={{ height: allDone ? "30%" : "18%" }}
@@ -94,12 +109,8 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
             borderRadius: "0 0 48% 48%",
           }}
         />
-
-        {/* glass reflection streaks */}
         <div className="absolute left-[12%] top-[8%] h-[55%] w-[14%] rounded-full bg-white/40 blur-md" />
         <div className="absolute right-[18%] top-[14%] h-[30%] w-[7%] rounded-full bg-white/25 blur-sm" />
-
-        {/* shimmer rim at top */}
         <div className="absolute top-0 left-[10%] right-[10%] h-[3px] rounded-full bg-white/60 blur-[1px]" />
       </motion.div>
 
@@ -136,7 +147,7 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
         </AnimatePresence>
       </div>
 
-      {/* All done sparkle overlay */}
+      {/* All done overlay */}
       <AnimatePresence>
         {allDone && (
           <motion.div
@@ -145,7 +156,7 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
             exit={{ opacity: 0 }}
             className="pointer-events-none absolute inset-0 flex items-center justify-center"
           >
-            <p className="font-display text-sm italic text-lavglow text-black drop-shadow">
+            <p className="font-display text-sm italic text-black drop-shadow">
               all clear
             </p>
           </motion.div>
@@ -165,10 +176,7 @@ export default function MemoryJar({ tasks, onCompleteTask }: MemoryJarProps) {
       <TaskDetailModal
         task={activeTask}
         onClose={() => setActiveTask(null)}
-        onComplete={(id) => {
-          onCompleteTask(id);
-          setActiveTask(null);
-        }}
+        onComplete={handleComplete}
       />
     </section>
   );

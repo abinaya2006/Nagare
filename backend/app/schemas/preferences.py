@@ -1,10 +1,24 @@
 from datetime import datetime, time
-from uuid import UUID
-from pydantic import BaseModel, Field, field_validator, model_validator
-from app.core.security import sanitize_text
-
-
 from typing import List
+from uuid import UUID
+
+from app.core.security import sanitize_text
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+lunch_start: time | None = None
+lunch_end: time | None = None
+
+
+@model_validator(mode="after")
+def validate_lunch_order(self):
+    if (
+        self.lunch_start is not None
+        and self.lunch_end is not None
+        and self.lunch_end <= self.lunch_start
+    ):
+        raise ValueError("lunch_end must be after lunch_start")
+    return self
+
 
 class RoutineTaskBase(BaseModel):
     title: str = Field(min_length=1, max_length=160)
@@ -51,20 +65,20 @@ class RoutineTaskUpdate(BaseModel):
 
     @model_validator(mode="after")
     def clean_values(self):
-      if self.title is not None:
-        self.title = sanitize_text(self.title, 160)
+        if self.title is not None:
+            self.title = sanitize_text(self.title, 160)
 
-      if self.days is not None:
-        self.days = [sanitize_text(day, 20) for day in self.days]
+        if self.days is not None:
+            self.days = [sanitize_text(day, 20) for day in self.days]
 
-      if (
-        self.start_time is not None
-        and self.end_time is not None
-        and self.end_time <= self.start_time
-    ):
-        raise ValueError("end_time must be after start_time")
+        if (
+            self.start_time is not None
+            and self.end_time is not None
+            and self.end_time <= self.start_time
+        ):
+            raise ValueError("end_time must be after start_time")
 
-      return self
+        return self
 
 
 class RoutineTask(RoutineTaskBase):
