@@ -24,7 +24,7 @@ class OrdaService:
         # 3. Call the AI Module
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
-                ai_url = os.getenv("AI_SERVICE_URL", "http://127.0.0.1:8000")
+                ai_url = os.getenv("AI_SERVICE_URL", "http://127.0.0.1:8001")
                 ai_response = await client.post(
                     f"{ai_url}/api/ai/orda/chat", json=ai_payload
                 )

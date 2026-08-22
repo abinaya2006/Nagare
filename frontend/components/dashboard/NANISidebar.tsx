@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Send } from "lucide-react";
 import { useNaniSidebar } from "@/components/providers/NaniProvider";
+import { useNaniHealth } from "@/hooks/useNANIHealth";
 
 interface NANISidebarProps {
   isOpen: boolean;
@@ -12,11 +13,15 @@ interface NANISidebarProps {
 
 export default function NANISidebar({ isOpen, onClose }: NANISidebarProps) {
   const { messages, isThinking, error, sendMessage } = useNaniSidebar();
+  const { state, refresh } = useNaniHealth();
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   }, [messages, isThinking]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -25,6 +30,9 @@ export default function NANISidebar({ isOpen, onClose }: NANISidebarProps) {
     sendMessage(draft);
     setDraft("");
   };
+
+  const isHealthy = state === "healthy";
+  const isLoading = state === "loading";
 
   return (
     <>
@@ -50,14 +58,45 @@ export default function NANISidebar({ isOpen, onClose }: NANISidebarProps) {
         transition={{ type: "spring", stiffness: 260, damping: 30 }}
         className="glass-strong fixed inset-y-0 right-0 z-50 flex w-full flex-col sm:w-[420px]"
         style={{ pointerEvents: isOpen ? "auto" : "none" }}
-          onClick={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-white/50 px-6 py-5">
           <div>
-            <h2 className="font-display text-xl font-medium text-ink">NANI</h2>
-            <p className="text-xs text-ink-soft">What are we untangling today?</p>
+            <div className="flex items-center gap-2">
+              <h2 className="font-display text-xl font-medium text-ink">NANI</h2>
+
+              <button
+                type="button"
+                onClick={refresh}
+                className={`h-2.5 w-2.5 rounded-full transition-all duration-500 ${
+                  isHealthy
+                    ? "bg-white shadow-[0_0_10px_3px_rgba(255,255,255,0.75)]"
+                    : isLoading
+                      ? "bg-white/60 animate-pulse"
+                      : "bg-black/80 ring-1 ring-white/20"
+                }`}
+                title={
+                  isLoading
+                    ? "Checking NANI status"
+                    : isHealthy
+                      ? "NANI is active"
+                      : "NANI has an issue"
+                }
+                aria-label={
+                  isLoading
+                    ? "Checking NANI status"
+                    : isHealthy
+                      ? "NANI is active"
+                      : "NANI has an issue"
+                }
+              />
+            </div>
+
+            <p className="text-xs text-ink-soft">
+              What are we untangling today?
+            </p>
           </div>
+
           <button
             type="button"
             onClick={onClose}
@@ -68,8 +107,10 @@ export default function NANISidebar({ isOpen, onClose }: NANISidebarProps) {
           </button>
         </div>
 
-        {/* Messages */}
-        <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-5 py-5">
+        <div
+          ref={scrollRef}
+          className="flex-1 space-y-3 overflow-y-auto px-5 py-5"
+        >
           {messages.map((message) => (
             <motion.div
               key={message.id}
@@ -98,17 +139,25 @@ export default function NANISidebar({ isOpen, onClose }: NANISidebarProps) {
                   key={i}
                   className="h-1.5 w-1.5 rounded-full bg-lavglow"
                   animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                  transition={{
+                    duration: 1.2,
+                    repeat: Infinity,
+                    delay: i * 0.2,
+                  }}
                 />
               ))}
             </motion.div>
           )}
 
-          {error && <p className="text-xs text-coral-glow">{error}</p>}
+          {error && (
+            <p className="text-xs text-coral-glow">{error}</p>
+          )}
         </div>
 
-        {/* Input */}
-        <form onSubmit={handleSubmit} className="border-t border-white/50 px-5 py-4">
+        <form
+          onSubmit={handleSubmit}
+          className="border-t border-white/50 px-5 py-4"
+        >
           <div className="flex items-center gap-2 rounded-full bg-white/60 px-4 py-2.5 shadow-inner">
             <input
               type="text"
@@ -118,6 +167,7 @@ export default function NANISidebar({ isOpen, onClose }: NANISidebarProps) {
               aria-label="Message NANI"
               className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink-soft focus:outline-none"
             />
+
             <button
               type="submit"
               disabled={!draft.trim()}

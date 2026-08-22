@@ -22,7 +22,7 @@ class GeminiService:
         genai.configure(api_key=self.api_key)
         
         # gemini-1.5-flash is perfect for hackathons: very fast, cheap, and excellent at JSON formatting
-        self.model_name = "gemini-2.5-flash"
+        self.model_name = "gemini-3.6-flash"
 
     def generate_structured_response(
         self, 
