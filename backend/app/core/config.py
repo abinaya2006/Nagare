@@ -1,4 +1,5 @@
 from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,12 +9,20 @@ class Settings(BaseSettings):
     environment: str = "development"
     api_host: str = "http://localhost:8000"
     frontend_origin: str = "http://localhost:3000"
+
     supabase_url: str = "http://localhost"
     supabase_anon_key: str = ""
     supabase_service_role_key: str = ""
     supabase_jwt_secret: str = "dev-only-change-me"
+
+    ai_provider: str = "deepseek"  # "deepseek" | "gemini"
+
     deepseek_api_key: str = ""
     deepseek_model: str = "deepseek-chat"
+
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
+
     rate_limit_per_minute: int = 60
     request_max_bytes: int = 1_000_000
 
