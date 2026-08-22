@@ -2,7 +2,7 @@
 import { useState, useId } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles, ChevronDown, Check } from "lucide-react";
-import { useNaniHealth, type NaniHealthState } from "@/hooks/useNaniHealth";
+import { useNaniHealth, type NaniHealthState } from "@/hooks/useNANIHealth";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
