@@ -1,42 +1,50 @@
 import Link from "next/link";
-import { ArrowRight, CalendarClock, Sparkles } from "lucide-react";
 
 export default function LandingPage() {
   return (
-    <main className="mx-auto grid max-w-6xl gap-12 px-4 py-12 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
-      <section>
-        <p className="text-sm font-medium text-accentPink">Less Planning. More Doing.</p>
-        <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-normal text-slate-950 sm:text-6xl">Pulse Plan</h1>
-        <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-          An adaptive scheduling companion that turns tasks, deadlines, priorities, and interruptions into a focused plan.
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#FCFCFF]">
+      {/* Background Glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#E8E1FF,transparent_60%)]" />
+      {/* Floating Memory Particles */}
+      <div className="absolute top-24 left-24 h-24 w-24 rounded-full bg-[#E8E1FF]/50 blur-3xl" />
+      <div className="absolute bottom-32 right-24 h-32 w-32 rounded-full bg-[#DDEEFF]/60 blur-3xl" />
+      <div className="absolute top-1/2 left-10 h-16 w-16 rounded-full bg-[#FFF4C7]/50 blur-2xl" />
+      {/* Thought Fragments */}
+      <div className="absolute top-32 left-[15%] rounded-full border border-white/50 bg-white/60 px-4 py-2 backdrop-blur-md">
+        Learn Japanese
+      </div>
+      <div className="absolute bottom-40 right-[20%] rounded-full border border-white/50 bg-white/60 px-4 py-2 backdrop-blur-md">
+        Hackathon Demo
+      </div>
+      <div className="absolute top-[60%] left-[25%] rounded-full border border-white/50 bg-white/60 px-4 py-2 backdrop-blur-md">
+        Build Portfolio
+      </div>
+      {/* Hero */}
+      <section className="relative z-10 max-w-2xl text-center">
+        <h1 className="mb-6 font-serif text-7xl text-[#2F3142]">Nagare</h1>
+        <p className="mb-4 text-2xl text-[#4A4D68]">
+          Where thoughts find their flow.
         </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/signup" className="inline-flex h-11 items-center gap-2 rounded-md bg-slate-950 px-5 text-sm font-medium text-white">
-            Start planning <ArrowRight className="size-4" />
+        <div className="mb-10 space-y-2 text-[#6D7088]">
+          <p>Some thoughts are unfinished.</p>
+          <p>Some dreams are waiting.</p>
+          <p>Some plans never find their place.</p>
+        </div>
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <Link
+            href="/signup"
+            className="rounded-full bg-[#2F3142] px-8 py-4 text-white transition hover:scale-105"
+          >
+            ✨ Start Planning
           </Link>
-          <Link href="/login" className="inline-flex h-11 items-center rounded-md border border-border px-5 text-sm font-medium">Log in</Link>
-        </div>
-      </section>
-      <section className="rounded-lg border border-border bg-white p-5 shadow-soft">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-500">Today</p>
-            <h2 className="text-xl font-semibold">Adaptive focus plan</h2>
-          </div>
-          <Sparkles className="size-6 text-accentAmber" />
-        </div>
-        {["Deep work block", "Assignment draft", "Meeting buffer"].map((item, index) => (
-          <div key={item} className="mb-3 grid grid-cols-[80px_1fr] rounded-md border border-border p-3">
-            <span className="text-sm font-medium text-accentBlue">{9 + index}:00</span>
-            <span>{item}</span>
-          </div>
-        ))}
-        <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
-          <CalendarClock className="size-4" />
-          Reschedules when the day changes.
+          <Link
+            href="/login"
+            className="rounded-full border border-[#D7DAEA] bg-white/70 px-8 py-4 text-[#2F3142] backdrop-blur-md transition hover:scale-105"
+          >
+            Log In
+          </Link>
         </div>
       </section>
     </main>
   );
 }
-

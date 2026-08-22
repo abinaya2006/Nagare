@@ -1,36 +1,54 @@
-export type Priority = "Low" | "Medium" | "High";
-export type TaskStatus = "Pending" | "Scheduled" | "Completed";
+export type TaskCategory = "focus" | "admin" | "creative" | "health" | "social";
+export type Priority = "high" | "medium" | "low";
 
 export interface Task {
   id: string;
-  user_id: string;
   title: string;
-  description: string;
-  deadline: string | null;
-  estimated_duration_minutes: number;
+  category: TaskCategory;
   priority: Priority;
-  status: TaskStatus;
-  created_at: string;
-  updated_at: string;
+  deadline: string; // ISO date string
+  estimatedDuration: number; // minutes
+  done: boolean;
+  completed: boolean;
+  dueToday: boolean;
 }
 
-export interface TaskInput {
-  title: string;
-  description?: string;
-  deadline?: string | null;
-  estimated_duration_minutes: number;
-  priority: Priority;
-  status?: TaskStatus;
+export interface ScheduleBlock {
+  id: string;
+  time: string;
+  label: string;
 }
 
-export interface ScheduleItem {
-  task_id: string;
-  task_title: string;
-  start_time: string;
-  end_time: string;
+export interface NaniMessage {
+  id: string;
+  role: "user" | "nani";
+  content: string;
+  timestamp: string;
 }
 
-export interface ScheduleOutput {
-  schedule: ScheduleItem[];
+export interface MindSnapshotData {
+  total: number;
+  pending: number;
+  completed: number;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  profileComplete: boolean;
+  onboardingComplete: boolean;
+}
+
+export interface OrbConfig {
+  id: number;
+  color: string;
+  size: number;
+  initialX: number;
+  initialY: number;
+  duration: number;
+  xRange: number;
+  yRange: number;
+}
+
+export type AppPage = "login" | "signup" | "onboarding" | "dashboard";

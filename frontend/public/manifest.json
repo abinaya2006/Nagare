@@ -1,14 +1,20 @@
 {
-  "name": "Pulse Plan",
-  "short_name": "PulsePlan",
-  "description": "Less Planning. More Doing.",
+  "name": "Nagare",
+  "short_name": "Nagare",
+  "description": "A calm productivity app that drifts with you.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#111827",
+  "background_color": "#DDEEFF",
+  "theme_color": "#E8E1FF",
+  "orientation": "portrait",
   "icons": [
-    { "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" },
-    { "src": "/icons/icon-512.svg", "sizes": "512x512", "type": "image/svg+xml" }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
-
